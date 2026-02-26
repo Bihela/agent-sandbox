@@ -1051,6 +1051,22 @@
                 </div>
             </div>
         </div>
+
+        <div class="history-section">
+            <h3>📦 Export Dataset</h3>
+            <div style="display:flex;gap:6px;">
+                <button class="btn secondary" style="flex:1;font-size:0.75rem;padding:6px;"
+                    onclick="exportDataset('json')">
+                    📄 JSON
+                </button>
+                <button class="btn secondary" style="flex:1;font-size:0.75rem;padding:6px;"
+                    onclick="exportDataset('csv')">
+                    📊 CSV
+                </button>
+            </div>
+            <div id="export-status" style="font-size:0.7rem;color:var(--text-dim);text-align:center;margin-top:4px;">
+            </div>
+        </div>
     </div>
 
     <!-- ═══ Main Content ═══ -->
@@ -1631,6 +1647,42 @@
                 `;
                 barsEl.appendChild(row);
             });
+        }
+
+        // ─── Dataset Export ───
+        async function exportDataset(format) {
+            const statusEl = document.getElementById('export-status');
+            statusEl.textContent = '⏳ Exporting...';
+
+            try {
+                if (format === 'csv') {
+                    // CSV: trigger file download
+                    const a = document.createElement('a');
+                    a.href = `${API_BASE}/dataset/export?format=csv`;
+                    a.download = 'agent_sandbox_dataset.csv';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    statusEl.textContent = '✅ CSV downloaded!';
+                } else {
+                    // JSON: fetch and trigger download
+                    const res = await fetch(`${API_BASE}/dataset/export?format=json`);
+                    const json = await res.json();
+                    const blob = new Blob([JSON.stringify(json.data, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'agent_sandbox_dataset.json';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    statusEl.textContent = `✅ ${json.total_rows} rows exported!`;
+                }
+            } catch (e) {
+                statusEl.textContent = '❌ No data yet — run a simulation first!';
+            }
+            setTimeout(() => { statusEl.textContent = ''; }, 3000);
         }
     </script>
 </body>

@@ -120,4 +120,29 @@ def get_telemetry():
     from telemetry_module.telemetry import collector
     return {"status": "success", "data": collector.get_global_metrics()}
 
+@app.get("/dataset/export")
+def export_dataset(format: str = "json"):
+    """
+    Export all simulation data as a flat dataset.
+    ?format=json → JSON array of rows
+    ?format=csv  → downloadable CSV file
+    """
+    from fastapi.responses import Response
+    from metrics.dataset_exporter import export_to_rows, export_to_csv_string
+
+    replays = world_manager.get_all_replays()
+    if not replays:
+        raise HTTPException(status_code=404, detail="No simulations to export. Run some first!")
+
+    if format.lower() == "csv":
+        csv_data = export_to_csv_string(replays)
+        return Response(
+            content=csv_data,
+            media_type="text/csv",
+            headers={"Content-Disposition": "attachment; filename=agent_sandbox_dataset.csv"}
+        )
+    else:
+        rows = export_to_rows(replays)
+        return {"status": "success", "total_rows": len(rows), "data": rows}
+
 app.mount("/play", StaticFiles(directory="frontend", html=True), name="frontend")

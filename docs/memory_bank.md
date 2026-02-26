@@ -77,4 +77,12 @@ This document records decisions made during development, specifically logging ap
 
 ---
 
+### 🟢 [Dataset Export System — Simulation Data Generator]
+- **Date**: 2026-02-26
+- **Context**: Simulation data was trapped in memory/API responses. We needed an export pipeline to turn the sandbox into a reusable dataset generator for research.
+- **Decision**: Built `metrics/dataset_exporter.py` that flattens replay data into one row per decision step with 20 columns (sim_id, status, turns, final_price, config fields, failure metrics, telemetry metrics, per-step action data). Added `GET /dataset/export?format=json|csv` endpoint with Content-Disposition header for CSV downloads. Frontend sidebar has export buttons with download status feedback.
+- **Impact**: Every simulation run can now be exported as structured research data. CSV files can be loaded directly into pandas/R for analysis.
+
+---
+
 *(No more entries. Add entries here when evaluating features, dependencies, or architectural choices.)*
