@@ -1061,15 +1061,35 @@
         </div>
 
         <div class="controls">
-            <h3>New Simulation</h3>
-            <div class="input-row">
+            <h3>Scenario Settings</h3>
+            <div class="input-row" style="margin-bottom: 16px;">
                 <div class="input-group">
-                    <label>Buyer Max $</label>
-                    <input type="number" id="buyer-max" value="150">
+                    <label>Scenario Type</label>
+                    <select id="scenario-type" onchange="toggleMultiAgentUI()"
+                        style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border); color: var(--text); padding: 8px; border-radius: var(--radius-sm); outline: none;">
+                        <option value="price_negotiation">1v1 Negotiation</option>
+                        <option value="multi_vendor">Multi-Vendor (1vN)</option>
+                    </select>
                 </div>
-                <div class="input-group">
-                    <label>Seller Min $</label>
-                    <input type="number" id="seller-min" value="100">
+            </div>
+
+            <div id="1v1-controls">
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>Buyer Max $</label>
+                        <input type="number" id="buyer-max" value="150" style="width:100%">
+                    </div>
+                    <div class="input-group">
+                        <label>Seller Min $</label>
+                        <input type="number" id="seller-min" value="100" style="width:100%">
+                    </div>
+                </div>
+            </div>
+
+            <div id="multi-vendor-controls" class="hidden" style="margin-bottom: 16px;">
+                <div class="input-group" style="margin-bottom: 8px;">
+                    <label>Number of Vendors</label>
+                    <input type="number" id="num-vendors" value="3" min="2" max="5" style="width:100%">
                 </div>
             </div>
             <button class="btn" id="start-btn" onclick="startSimulation()">
@@ -1442,35 +1462,56 @@
             btn.classList.add('loading-btn');
             btnText.textContent = '⏳ Running...';
 
+            // NEW: Scenario Type
+            const scenarioType = document.getElementById('scenario-type').value;
+            const numVendors = parseInt(document.getElementById('num-vendors').value) || 2;
+
             // Gather config
-            const config = {
+            let payload = {
+                scenario_type: scenarioType,
+                buyer_max: bMax,
+                seller_min: sMin,
+                max_turns: 20,
                 negotiation_style: document.getElementById('cfg-style').value,
                 temperature: parseFloat(document.getElementById('cfg-temp').value),
-                buyer_config: {
-                    strategy: document.getElementById('cfg-buyer-strategy').value,
-                    risk_level: document.getElementById('cfg-buyer-risk').value,
-                    temperature: parseFloat(document.getElementById('cfg-temp').value),
-                },
-                seller_config: {
-                    strategy: document.getElementById('cfg-seller-strategy').value,
-                    risk_level: document.getElementById('cfg-seller-risk').value,
-                    temperature: parseFloat(document.getElementById('cfg-temp').value),
-                },
                 red_team_config: {
                     enabled: document.getElementById('red-team-enabled').checked,
                     attack_probability: parseFloat(document.getElementById('attack-probability').value) / 100,
                 }
             };
 
+            if (scenarioType === 'multi_vendor') {
+                payload.num_vendors = numVendors;
+                payload.agents_configs = [
+                    { name: "Global Buyer", role: "buyer", strategy: document.getElementById('cfg-buyer-strategy').value, risk_level: document.getElementById('cfg-buyer-risk').value, temperature: parseFloat(document.getElementById('cfg-temp').value) }
+                ];
+                for (let i = 0; i < numVendors; i++) {
+                    payload.agents_configs.push({
+                        name: `Vendor ${i + 1}`,
+                        role: "seller",
+                        strategy: document.getElementById('cfg-seller-strategy').value,
+                        risk_level: document.getElementById('cfg-seller-risk').value,
+                        temperature: parseFloat(document.getElementById('cfg-temp').value)
+                    });
+                }
+            } else {
+                payload.buyer_config = {
+                    strategy: document.getElementById('cfg-buyer-strategy').value,
+                    risk_level: document.getElementById('cfg-buyer-risk').value,
+                    temperature: parseFloat(document.getElementById('cfg-temp').value),
+                };
+                payload.seller_config = {
+                    strategy: document.getElementById('cfg-seller-strategy').value,
+                    risk_level: document.getElementById('cfg-seller-risk').value,
+                    temperature: parseFloat(document.getElementById('cfg-temp').value),
+                };
+            }
+
             try {
                 const res = await fetch(`${API_BASE}/simulation/start`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        buyer_max: bMax,
-                        seller_min: sMin,
-                        ...config,
-                    })
+                    body: JSON.stringify(payload)
                 });
                 const json = await res.json();
                 if (json.status === "success") {
@@ -1592,6 +1633,20 @@
             }
         }
 
+        function toggleMultiAgentUI() {
+            const scenarioType = document.getElementById('scenario-type').value;
+            const ctrl1v1 = document.getElementById('1v1-controls');
+            const ctrlMulti = document.getElementById('multi-vendor-controls');
+
+            if (scenarioType === 'multi_vendor') {
+                ctrl1v1.classList.add('hidden');
+                ctrlMulti.classList.remove('hidden');
+            } else {
+                ctrl1v1.classList.remove('hidden');
+                ctrlMulti.classList.add('hidden');
+            }
+        }
+
         // ─── Config Options ───
         async function loadConfigOptions() {
             try {
@@ -1702,53 +1757,61 @@
 
             if (!steps || steps.length === 0) return;
 
-            const buyerData = [];
-            const sellerData = [];
+            const datasetsMap = {};
             const labels = [];
+            const agentColors = [
+                '#38bdf8', // Buyer blue
+                '#f472b6', // Seller pink
+                '#10b981', // Emerald
+                '#fbbf24', // Amber
+                '#a78bfa', // Violet
+                '#f87171'  // Red
+            ];
+
+            const colorsMap = {};
 
             steps.forEach((step, i) => {
                 const price = step.action?.price;
-                labels.push(`T${step.turn}`);
-                const isBuyer = step.agent.toLowerCase().includes('buyer');
-                if (isBuyer) {
-                    buyerData.push(price ?? null);
-                    sellerData.push(null);
-                } else {
-                    sellerData.push(price ?? null);
-                    buyerData.push(null);
+                const agent = step.agent;
+
+                // Add label for turn if not already there for this turn index
+                const label = `T${step.turn}`;
+                if (!labels.includes(label)) labels.push(label);
+                const turnIdx = labels.indexOf(label);
+
+                if (!datasetsMap[agent]) {
+                    if (!colorsMap[agent]) {
+                        const colorIdx = Object.keys(datasetsMap).length % agentColors.length;
+                        colorsMap[agent] = agentColors[colorIdx];
+                    }
+                    datasetsMap[agent] = {
+                        label: agent,
+                        data: new Array(steps.length).fill(null),
+                        borderColor: colorsMap[agent],
+                        backgroundColor: colorsMap[agent] + '1A', // 10% opacity
+                        borderWidth: 2,
+                        tension: 0.3,
+                        pointRadius: 4,
+                        pointBackgroundColor: colorsMap[agent],
+                        fill: false,
+                        spanGaps: true
+                    };
                 }
+
+                // Set price at the correct turn index
+                datasetsMap[agent].data[turnIdx] = (price != null) ? price : null;
+            });
+
+            // Clean up unneeded nulls at the end of data arrays if labels were shorter
+            Object.values(datasetsMap).forEach(ds => {
+                ds.data = ds.data.slice(0, labels.length);
             });
 
             priceChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels,
-                    datasets: [
-                        {
-                            label: 'Buyer',
-                            data: buyerData,
-                            borderColor: '#38bdf8',
-                            backgroundColor: 'rgba(56,189,248,0.1)',
-                            borderWidth: 2,
-                            tension: 0.3,
-                            pointRadius: 4,
-                            pointBackgroundColor: '#38bdf8',
-                            fill: false,
-                            spanGaps: true,
-                        },
-                        {
-                            label: 'Seller',
-                            data: sellerData,
-                            borderColor: '#f472b6',
-                            backgroundColor: 'rgba(244,114,182,0.1)',
-                            borderWidth: 2,
-                            tension: 0.3,
-                            pointRadius: 4,
-                            pointBackgroundColor: '#f472b6',
-                            fill: false,
-                            spanGaps: true,
-                        }
-                    ]
+                    datasets: Object.values(datasetsMap)
                 },
                 options: {
                     responsive: true,
@@ -1815,7 +1878,8 @@
 
             steps.forEach((step, index) => {
                 const isBuyer = step.agent.toLowerCase().includes('buyer');
-                const agentClass = isBuyer ? 'buyer' : 'seller';
+                const isSeller = step.agent.toLowerCase().includes('seller') || step.agent.toLowerCase().includes('vendor');
+                const agentClass = isBuyer ? 'buyer' : isSeller ? 'seller' : 'neutral';
                 const action = step.action?.action || step.action?.type || '?';
                 const price = step.action?.price;
                 const reasoning = step.action?.reasoning || '';
@@ -1829,7 +1893,7 @@
                     ? `<span class="action-price">$${price.toFixed(2)}</span>`
                     : '';
 
-                const actionClass = action === 'accept' ? ' accept' : action === 'reject' ? ' reject' : '';
+                const actionClass = (action === 'acceptance' || action === 'accept') ? ' accept' : (action === 'rejection' || action === 'reject') ? ' reject' : '';
 
                 const reasoningHtml = reasoning
                     ? `<div class="step-reasoning">${reasoning}</div>`

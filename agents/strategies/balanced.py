@@ -27,13 +27,13 @@ class BalancedStrategy(BaseStrategy):
                                  budget_limit: float) -> dict:
         if role == "buyer":
             if current_price <= budget_limit * 0.9:
-                return {"type": "accept", "price": None,
+                return {"type": "acceptance", "price": None,
                         "reasoning": f"Price ${current_price} is within 90% of budget — good deal."}
-            return {"type": "counter_offer", "price": round(current_price * 0.90, 2),
+            return {"type": "counter_proposal", "price": round(current_price * 0.90, 2),
                     "reasoning": f"Balanced counter: 10% lower at ${round(current_price * 0.90, 2)}."}
         else:
             if current_price >= budget_limit * 1.1:
-                return {"type": "accept", "price": None,
+                return {"type": "acceptance", "price": None,
                         "reasoning": f"Price ${current_price} is 10% above minimum — accepting."}
-            return {"type": "counter_offer", "price": round(current_price * 1.10, 2),
+            return {"type": "counter_proposal", "price": round(current_price * 1.10, 2),
                     "reasoning": f"Balanced counter: 10% higher at ${round(current_price * 1.10, 2)}."}

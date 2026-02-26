@@ -8,7 +8,7 @@ from telemetry_module.telemetry import tracer, collector
 
 class LLMAgent(Agent):
     def __init__(self, name, role, temperature=0.7, strategy_name="balanced",
-                 risk_prompt="", style_prompt="", model="mistral"):
+                 risk_prompt="", style_prompt="", model="mistral", **kwargs):
         super().__init__(name)
         self.role = role
         self.model = model
@@ -135,8 +135,8 @@ Respond in EXACT JSON format with no markdown wrappers or other text:
                 # Use strategy's fallback logic instead of hardcoded values
                 if current_price is None or current_price == 'None yet':
                     opening = self._budget_limit * 0.7 if self._role_type == "buyer" else self._budget_limit
-                    return {"type": "offer", "price": round(opening, 2),
-                            "reasoning": f"Opening offer via {self.strategy.name} strategy (fallback)."}
+                    return {"type": "proposal", "price": round(opening, 2),
+                            "reasoning": f"Opening proposal via {self.strategy.name} strategy (fallback)."}
 
                 return self.strategy.compute_fallback_action(
                     self._role_type, float(current_price), self._budget_limit
@@ -149,30 +149,22 @@ Respond in EXACT JSON format with no markdown wrappers or other text:
 
 
 class LLMBuyerAgent(LLMAgent):
-    def __init__(self, name: str, max_price: float, temperature=0.7,
-                 strategy_name="balanced", risk_prompt="", style_prompt="", model="mistral"):
+    def __init__(self, name: str, max_price: float, role_description: str = None, **kwargs):
+        role = role_description or f"a buyer with a strict max budget of {max_price}"
         super().__init__(
             name,
-            role=f"a buyer with a strict max budget of {max_price}",
-            temperature=temperature,
-            strategy_name=strategy_name,
-            risk_prompt=risk_prompt,
-            style_prompt=style_prompt,
-            model=model,
+            role=role,
+            **kwargs
         )
         self.max_price = max_price
 
 
 class LLMSellerAgent(LLMAgent):
-    def __init__(self, name: str, min_price: float, temperature=0.7,
-                 strategy_name="balanced", risk_prompt="", style_prompt="", model="mistral"):
+    def __init__(self, name: str, min_price: float, role_description: str = None, **kwargs):
+        role = role_description or f"a seller with a strict minimum acceptable price of {min_price}"
         super().__init__(
             name,
-            role=f"a seller with a strict minimum acceptable price of {min_price}",
-            temperature=temperature,
-            strategy_name=strategy_name,
-            risk_prompt=risk_prompt,
-            style_prompt=style_prompt,
-            model=model,
+            role=role,
+            **kwargs
         )
         self.min_price = min_price

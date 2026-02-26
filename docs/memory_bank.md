@@ -100,6 +100,11 @@ This document records decisions made during development, specifically logging ap
 - **Date**: 2026-02-26
 - **Context**: To turn the sandbox into a research engine, we needed a way to automate hundreds of simulations while varying specific hyperparameters (Grid Search).
 - **Decision**: Implemented `ExperimentRunner` in a dedicated `experiments/` module. It performs Cartesian product sweeps over strategies and temperatures.
-- **Impact**: Enables scientific study of negotiation behavior. Users can now click one button to see how `temperature` affects win rates across all strategy combinations.
+### 🟢 [Multi-Agent Negotiation Support — Scaling Beyond 1v1]
+- **Date**: 2026-02-26
+- **Context**: The sandbox was limited to 1v1 interactions. Real-world research requires multi-agent settings to study competition, coalitions, and price wars.
+- **Decision**: Refactored the `WorldManager` and `Mediator` to support dynamic participation counts. Created the `MultiVendorNegotiationScenario` (1 Buyer vs N Sellers) and updated the frontend to visualize multiple price trajectories simultaneously.
+- **Reasoning (Why rejected)**: Initially considered hardcoding a "Vendor C", but rejected it in favor of a `List[Agent]` architecture to allow for theoretically infinite participant pools.
+- **Impact**: The sandbox is now a "Multiversal" simulator. We successfully verified "Price War" behaviors where multiple LLM vendors undercut each other to win a buyer's proposal.
 
 *(No more entries. Add entries here when evaluating features, dependencies, or architectural choices.)*

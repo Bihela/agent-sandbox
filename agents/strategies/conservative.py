@@ -27,13 +27,13 @@ class ConservativeStrategy(BaseStrategy):
                                  budget_limit: float) -> dict:
         if role == "buyer":
             if current_price <= budget_limit:
-                return {"type": "accept", "price": None,
+                return {"type": "acceptance", "price": None,
                         "reasoning": f"Price ${current_price} is within budget — accepting to close quickly."}
-            return {"type": "counter_offer", "price": round(current_price * 0.80, 2),
+            return {"type": "counter_proposal", "price": round(current_price * 0.80, 2),
                     "reasoning": f"Conservative counter: 20% lower at ${round(current_price * 0.80, 2)}."}
         else:
             if current_price >= budget_limit:
-                return {"type": "accept", "price": None,
+                return {"type": "acceptance", "price": None,
                         "reasoning": f"Price ${current_price} meets minimum — accepting to close quickly."}
-            return {"type": "counter_offer", "price": round(current_price * 1.20, 2),
+            return {"type": "counter_proposal", "price": round(current_price * 1.20, 2),
                     "reasoning": f"Conservative counter: 20% higher at ${round(current_price * 1.20, 2)}."}

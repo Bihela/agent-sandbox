@@ -24,91 +24,120 @@ class WorldManager:
 
         sim_id = str(uuid.uuid4())
         
-        # 1. create agents and mediator using the scenario + config
-        buyer_params = scenario.get_buyer_params()
-        seller_params = scenario.get_seller_params()
-
-        # Build prompt modifiers from config
+        # ─── 1. Build Agent Pool ───
+        agents = []
         style_prompt = config.get_style_prompt()
-        buyer_risk = config.get_risk_prompt(config.buyer_config.risk_level)
-        seller_risk = config.get_risk_prompt(config.seller_config.risk_level)
 
-        buyer_temp = config.buyer_config.temperature if config.buyer_config.temperature is not None else config.temperature
-        seller_temp = config.seller_config.temperature if config.seller_config.temperature is not None else config.temperature
+        if config.agents_configs:
+            # Multi-agent initialization
+            for idx, agent_cfg in enumerate(config.agents_configs):
+                role = agent_cfg.role.lower()
+                name = agent_cfg.name or f"Agent {idx+1} ({role})"
+                
+                # Determine class based on role
+                if "buyer" in role:
+                    agent_cls = LLMBuyerAgent
+                else:
+                    agent_cls = LLMSellerAgent
+                
+                strategy_prompt = config.get_strategy_prompt(agent_cfg.strategy)
+                risk_prompt = config.get_risk_prompt(agent_cfg.risk_level)
+                
+                # Merge scenario params if applicable (fallback to defaults)
+                # For multi-agent, the scenario might provide a list of params
+                # For now, we'll try to get role-based params from scenario
+                params = {}
+                if "buyer" in role:
+                    params = scenario.get_buyer_params()
+                else:
+                    params = scenario.get_seller_params()
 
-        agent_a = LLMBuyerAgent(
-            "Alice (LLM Buyer)", **buyer_params,
-            temperature=buyer_temp,
-            strategy_name=config.buyer_config.strategy.value,
-            risk_prompt=buyer_risk,
-            style_prompt=style_prompt,
-            model=config.model_name,
-        )
-        agent_b = LLMSellerAgent(
-            "Bob (LLM Seller)", **seller_params,
-            temperature=seller_temp,
-            strategy_name=config.seller_config.strategy.value,
-            risk_prompt=seller_risk,
-            style_prompt=style_prompt,
-            model=config.model_name,
-        )
-        mediator = Mediator(max_turns=scenario.max_turns)
+                agent = agent_cls(
+                    name=name,
+                    **params,
+                    temperature=agent_cfg.temperature,
+                    strategy_name=agent_cfg.strategy.value,
+                    risk_prompt=risk_prompt,
+                    style_prompt=f"{style_prompt} {strategy_prompt}",
+                    model=config.model_name
+                )
+                agent._sim_id = sim_id
+                agents.append(agent)
+        else:
+            # Legacy 1v1 fallback
+            buyer_params = scenario.get_buyer_params()
+            seller_params = scenario.get_seller_params()
+            
+            buyer_risk = config.get_risk_prompt(config.buyer_config.risk_level)
+            seller_risk = config.get_risk_prompt(config.seller_config.risk_level)
+
+            agent_a = LLMBuyerAgent(
+                "Alice (LLM Buyer)", **buyer_params,
+                temperature=config.buyer_config.temperature,
+                strategy_name=config.buyer_config.strategy.value,
+                risk_prompt=buyer_risk,
+                style_prompt=style_prompt,
+                model=config.model_name,
+            )
+            agent_b = LLMSellerAgent(
+                "Bob (LLM Seller)", **seller_params,
+                temperature=config.seller_config.temperature,
+                strategy_name=config.seller_config.strategy.value,
+                risk_prompt=seller_risk,
+                style_prompt=style_prompt,
+                model=config.model_name,
+            )
+            agent_a._sim_id = sim_id
+            agent_b._sim_id = sim_id
+            agents = [agent_a, agent_b]
+
+        mediator = Mediator(max_turns=scenario.max_turns, num_participants=len(agents))
 
         # Initialize telemetry for this simulation
         collector.start_simulation_telemetry(sim_id)
-        agent_a._sim_id = sim_id
-        agent_b._sim_id = sim_id
 
-        # 2. Start negotiation and monitor with initial state
+        # ─── 2. Start negotiation and monitor ───
         with tracer.start_as_current_span(
             "simulation.run",
             attributes={
                 "simulation.id": sim_id,
-                "simulation.buyer_max": buyer_params.get("max_price", 150),
-                "simulation.seller_min": seller_params.get("min_price", 100),
+                "simulation.participants": len(agents),
                 "simulation.max_turns": scenario.max_turns,
                 "config.style": config.negotiation_style.value,
-                "config.buyer_strategy": config.buyer_config.strategy.value,
-                "config.seller_strategy": config.seller_config.strategy.value,
             }
         ) as span:
-            result_details = self._run_negotiation_loop(agent_a, agent_b, mediator, scenario.get_initial_state(), config)
+            result_details = self._run_negotiation_loop(agents, mediator, scenario.get_initial_state(), config)
             span.set_attribute("simulation.status", result_details["status"])
             span.set_attribute("simulation.turns", result_details["turns"])
 
-        # 2b. Run failure taxonomy analysis over the completed transcript
+        # ─── 3. Post-Sim Analysis ───
+        # For multi-agent, we use default thresholds for failure detection if not clear
+        buyer_max = getattr(scenario, 'buyer_max', 150.0)
+        seller_min = getattr(scenario, 'seller_min', 100.0)
+
         failure_report = mediator.get_failure_report(
             result_details["steps"],
-            buyer_max=buyer_params.get("max_price", 150),
-            seller_min=seller_params.get("min_price", 100)
+            buyer_max=buyer_max,
+            seller_min=seller_min
         )
         
-        # 3. Store results in SQLite
+        # Determine final price from last step if agreement
         final_price = None
         if result_details["status"] == "agreement" and len(mediator.history) > 0:
              final_price = mediator.history[-1].price
              
-        db_result = save_simulation_result(
+        # Save to DB (Legacy DB schema only supports 2 agents, we use first 2 or summary)
+        agent_names = [a.name for a in agents]
+        save_simulation_result(
             sim_id=sim_id,
-            agent_a=agent_a.name,
-            agent_b=agent_b.name,
+            agent_a=agent_names[0],
+            agent_b=agent_names[1] if len(agent_names) > 1 else "None",
             status=result_details["status"],
             turns=result_details["turns"],
             final_price=final_price
         )
 
-        # 4. Save replay data in memory (include config snapshot for UI)
-        config_snapshot = {
-            "negotiation_style": config.negotiation_style.value,
-            "buyer_strategy": config.buyer_config.strategy.value,
-            "buyer_risk": config.buyer_config.risk_level.value,
-            "buyer_temperature": buyer_temp,
-            "seller_strategy": config.seller_config.strategy.value,
-            "seller_risk": config.seller_config.risk_level.value,
-            "seller_temperature": seller_temp,
-            "model": config.model_name,
-        }
-
+        # ─── 4. Save replay data ───
         output = {
             "simulation_id": sim_id,
             "status": result_details["status"],
@@ -118,7 +147,7 @@ class WorldManager:
             "history": [msg.dict() for msg in mediator.history],
             "steps": result_details["steps"],
             "failure_report": failure_report,
-            "config": config_snapshot,
+            "config": {"model": config.model_name, "style": config.negotiation_style.value},
             "telemetry": collector.finalize_simulation(sim_id, result_details["turns"], result_details["steps"]),
         }
         self.historical_runs[sim_id] = output
@@ -160,7 +189,7 @@ class WorldManager:
             "average_agreement_price": avg_price
         }
 
-    def _run_negotiation_loop(self, agent_a: Agent, agent_b: Agent, mediator: Mediator, initial_state: dict, config: SimulationConfig):
+    def _run_negotiation_loop(self, participants: List[Agent], mediator: Mediator, initial_state: dict, config: SimulationConfig):
         finished = False
         turn_count = 0
         state = initial_state
@@ -169,43 +198,44 @@ class WorldManager:
         import random
 
         while not finished and turn_count < mediator.max_turns:
-            print(f"DEBUG: Turn {turn_count + 1} - Agent A")
-            # Agent A's (Buyer) turn
-            action_dict_a = agent_a.decide_action(state)
-            action_dict_a["sender"] = agent_a.name
-            action_dict_a["receiver"] = agent_b.name
-            
-            # ─── RED TEAM DISRUPTION A ───
-            if config.red_team_config.enabled and random.random() < config.red_team_config.attack_probability:
-                print(f"DEBUG: Disrupting Agent A's action...")
-                action_dict_a = self.red_team.disrupt(action_dict_a, config.red_team_config.attack_types)
+            for idx, current_agent in enumerate(participants):
+                print(f"DEBUG: Turn {turn_count + 1} - {current_agent.name}")
+                
+                # In multi-agent, we need to decide who the receiver is.
+                # Simplest model: Next agent in list (round-robin) or broadcast.
+                # For now, we'll set receiver to the 'other' principal agent or broadcast.
+                next_idx = (idx + 1) % len(participants)
+                receiver = participants[next_idx]
+                
+                action_dict = current_agent.decide_action(state)
+                action_dict["sender"] = current_agent.name
+                action_dict["receiver"] = receiver.name
+                
+                # ─── RED TEAM DISRUPTION ───
+                if config.red_team_config.enabled and random.random() < config.red_team_config.attack_probability:
+                    print(f"DEBUG: Disrupting {current_agent.name}'s action...")
+                    action_dict = self.red_team.disrupt(action_dict, config.red_team_config.attack_types)
 
-            steps.append({"turn": turn_count + 1, "agent": agent_a.name, "action": action_dict_a, "is_adversarial": action_dict_a.get("is_adversarial", False)})
-            
-            mediator_check_a = mediator.check_turn(action_dict_a)
-            if mediator_check_a["stop"]:
-                print(f"DEBUG: Mediator stop A: {mediator_check_a['reason']}")
-                return {"status": mediator_check_a["status"], "turns": turn_count + 1, "reason": mediator_check_a["reason"], "steps": steps}
-            state["current_price"] = action_dict_a.get("price")
-            
-            print(f"DEBUG: Turn {turn_count + 1} - Agent B")
-            # Agent B's (Seller) turn
-            action_dict_b = agent_b.decide_action(state)
-            action_dict_b["sender"] = agent_b.name
-            action_dict_b["receiver"] = agent_a.name
-            
-            # ─── RED TEAM DISRUPTION B ───
-            if config.red_team_config.enabled and random.random() < config.red_team_config.attack_probability:
-                print(f"DEBUG: Disrupting Agent B's action...")
-                action_dict_b = self.red_team.disrupt(action_dict_b, config.red_team_config.attack_types)
-
-            steps.append({"turn": turn_count + 1, "agent": agent_b.name, "action": action_dict_b, "is_adversarial": action_dict_b.get("is_adversarial", False)})
-            
-            mediator_check_b = mediator.check_turn(action_dict_b)
-            if mediator_check_b["stop"]:
-                print(f"DEBUG: Mediator stop B: {mediator_check_b['reason']}")
-                return {"status": mediator_check_b["status"], "turns": turn_count + 1, "reason": mediator_check_b["reason"], "steps": steps}
-            state["current_price"] = action_b.get("price")
+                steps.append({
+                    "turn": turn_count + 1, 
+                    "agent": current_agent.name, 
+                    "action": action_dict, 
+                    "is_adversarial": action_dict.get("is_adversarial", False)
+                })
+                
+                mediator_check = mediator.check_turn(action_dict)
+                if mediator_check["stop"]:
+                    print(f"DEBUG: Mediator stop ({current_agent.name}): {mediator_check['reason']}")
+                    return {
+                        "status": mediator_check["status"], 
+                        "turns": turn_count + 1, 
+                        "reason": mediator_check["reason"], 
+                        "steps": steps
+                    }
+                
+                # Update global state with most recent valid price
+                if action_dict.get("price") is not None:
+                    state["current_price"] = action_dict.get("price")
             
             turn_count += 1
 

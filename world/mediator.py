@@ -4,8 +4,9 @@ from metrics.failure_detector import FailureDetector
 
 
 class Mediator:
-    def __init__(self, max_turns: int = 20):
+    def __init__(self, max_turns: int = 20, num_participants: int = 2):
         self.max_turns = max_turns
+        self.num_participants = num_participants
         self.turn_count = 0
         self.history: List[NegotiationMessage] = []
         self.failure_detector = FailureDetector()
@@ -36,12 +37,11 @@ class Mediator:
 
         # 4. Check for loop / same offer repeated
         # If the same agent offers the identical price they offered in their previous turn
-        if len(self.history) >= 3:
-            # history[-1] is current agent's turn, history[-3] is their *previous* turn.
+        if len(self.history) >= (self.num_participants + 1):
             curr_msg = self.history[-1]
-            prev_self_msg = self.history[-3]
+            prev_self_msg = self.history[-(self.num_participants + 1)]
             if curr_msg.type == prev_self_msg.type and curr_msg.price == prev_self_msg.price:
-                return {"stop": True, "reason": "Repetitive behavior detected (agents stuck)", "status": "error"}
+                return {"stop": True, "reason": "Repetitive behavior detected (agents stuck in multi-party loop)", "status": "error"}
 
         return {"stop": False, "reason": "", "status": "ongoing"}
 

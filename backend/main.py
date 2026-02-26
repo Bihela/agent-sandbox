@@ -6,6 +6,7 @@ from typing import Optional, Dict, List
 from world.world_manager import WorldManager
 from configs.simulation_config import SimulationConfig, AgentConfig, StrategyType, RiskLevel, NegotiationStyle, RedTeamConfig
 from scenarios.price_negotiation import PriceNegotiationScenario
+from scenarios.multi_vendor_negotiation import MultiVendorNegotiationScenario
 from tournaments.tournament_runner import TournamentRunner
 from tournaments.leaderboard import Leaderboard
 from experiments.experiment_runner import ExperimentRunner
@@ -18,6 +19,8 @@ experiment_runner = ExperimentRunner(world_manager)
 
 
 class AgentConfigRequest(BaseModel):
+    name: Optional[str] = None
+    role: str = "negotiator"
     strategy: str = "adaptive"
     risk_level: str = "medium"
     temperature: float = 0.7
@@ -31,6 +34,7 @@ class SimulationRequest(BaseModel):
     scenario_type: str = "price_negotiation"
     buyer_max: Optional[float] = 150.0
     seller_min: Optional[float] = 100.0
+    num_vendors: Optional[int] = 2
     max_turns: Optional[int] = 20
     # Config fields
     negotiation_style: Optional[str] = "formal"
@@ -38,6 +42,7 @@ class SimulationRequest(BaseModel):
     temperature: Optional[float] = 0.7
     buyer_config: Optional[AgentConfigRequest] = None
     seller_config: Optional[AgentConfigRequest] = None
+    agents_configs: Optional[List[AgentConfigRequest]] = None
     red_team_config: Optional[RedTeamConfigRequest] = None
 
 
@@ -110,22 +115,44 @@ def start_simulation(req: SimulationRequest):
     try:
         if req.scenario_type == "price_negotiation":
             scenario = PriceNegotiationScenario(buyer_max=req.buyer_max, seller_min=req.seller_min, max_turns=req.max_turns)
+        elif req.scenario_type == "multi_vendor":
+            scenario = MultiVendorNegotiationScenario(buyer_max=req.buyer_max, seller_min=req.seller_min, num_vendors=req.num_vendors)
         else:
             raise ValueError(f"Unknown scenario type: {req.scenario_type}")
 
         # Build SimulationConfig from request
         temp = req.temperature if req.temperature is not None else 0.7
 
-        buyer_agent_cfg = AgentConfig(
-            strategy=StrategyType(req.buyer_config.strategy if req.buyer_config else "adaptive"),
-            risk_level=RiskLevel(req.buyer_config.risk_level if req.buyer_config else "medium"),
-            temperature=req.buyer_config.temperature if (req.buyer_config and req.buyer_config.temperature is not None) else temp,
-        )
-        seller_agent_cfg = AgentConfig(
-            strategy=StrategyType(req.seller_config.strategy if req.seller_config else "adaptive"),
-            risk_level=RiskLevel(req.seller_config.risk_level if req.seller_config else "medium"),
-            temperature=req.seller_config.temperature if (req.seller_config and req.seller_config.temperature is not None) else temp,
-        )
+        agents_list = []
+        if req.agents_configs:
+            for ac in req.agents_configs:
+                agents_list.append(AgentConfig(
+                    name=ac.name,
+                    role=ac.role,
+                    strategy=StrategyType(ac.strategy or "adaptive"),
+                    risk_level=RiskLevel(ac.risk_level or "medium"),
+                    temperature=ac.temperature if ac.temperature is not None else temp
+                ))
+
+        buyer_agent_cfg = None
+        if req.buyer_config:
+            buyer_agent_cfg = AgentConfig(
+                strategy=StrategyType(req.buyer_config.strategy or "adaptive"),
+                risk_level=RiskLevel(req.buyer_config.risk_level or "medium"),
+                temperature=req.buyer_config.temperature if req.buyer_config.temperature is not None else temp,
+            )
+        else:
+            buyer_agent_cfg = AgentConfig(strategy=StrategyType.ADAPTIVE, risk_level=RiskLevel.MEDIUM, temperature=temp)
+            
+        seller_agent_cfg = None
+        if req.seller_config:
+            seller_agent_cfg = AgentConfig(
+                strategy=StrategyType(req.seller_config.strategy or "adaptive"),
+                risk_level=RiskLevel(req.seller_config.risk_level or "medium"),
+                temperature=req.seller_config.temperature if req.seller_config.temperature is not None else temp,
+            )
+        else:
+            seller_agent_cfg = AgentConfig(strategy=StrategyType.ADAPTIVE, risk_level=RiskLevel.MEDIUM, temperature=temp)
 
         # Red Team Config
         red_team_cfg = RedTeamConfig(
@@ -140,9 +167,10 @@ def start_simulation(req: SimulationRequest):
             negotiation_style=NegotiationStyle(req.negotiation_style or "formal"),
             buyer_config=buyer_agent_cfg,
             seller_config=seller_agent_cfg,
-            red_team_config=red_team_cfg,
+            agents_configs=agents_list,
             model_name=req.model_name or "mistral",
             temperature=temp,
+            red_team_config=red_team_cfg
         )
 
         print(f"DEBUG: Starting simulation with config: {config.model_name}, red_team={config.red_team_config.enabled}")

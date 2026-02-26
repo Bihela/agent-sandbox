@@ -38,6 +38,8 @@ class NegotiationStyle(str, Enum):
 
 class AgentConfig(BaseModel):
     """Configuration for an individual agent."""
+    name: Optional[str] = Field(None, description="Agent name (optional)")
+    role: str = Field(default="negotiator", description="Agent role (e.g. buyer, seller)")
     strategy: StrategyType = Field(default=StrategyType.ADAPTIVE, description="Negotiation strategy preset")
     risk_level: RiskLevel = Field(default=RiskLevel.MEDIUM, description="Risk tolerance")
     temperature: float = Field(default=0.7, ge=0.0, le=2.0, description="LLM temperature (0=deterministic, 2=creative)")
@@ -71,6 +73,10 @@ class SimulationConfig(BaseModel):
     )
     buyer_config: AgentConfig = Field(default_factory=AgentConfig, description="Buyer agent config")
     seller_config: AgentConfig = Field(default_factory=AgentConfig, description="Seller agent config")
+    
+    # NEW: Multi-agent support
+    agents_configs: list[AgentConfig] = Field(default_factory=list, description="List of participant agents for multi-agent scenarios")
+    
     red_team_config: RedTeamConfig = Field(default_factory=RedTeamConfig, description="Red Team attack config")
 
     # ─── LLM Settings ───

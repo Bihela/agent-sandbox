@@ -26,16 +26,16 @@ class AggressiveStrategy(BaseStrategy):
     def compute_fallback_action(self, role: str, current_price: float,
                                  budget_limit: float) -> dict:
         if role == "buyer":
-            # Aggressive buyer: only accept if way under budget, small counter-offers
+            # Aggressive buyer: only accept if way under budget, small counter-proposals
             if current_price <= budget_limit * 0.75:
-                return {"type": "accept", "price": None,
+                return {"type": "acceptance", "price": None,
                         "reasoning": f"Price ${current_price} is well below budget — accepting aggressively."}
-            return {"type": "counter_offer", "price": round(current_price * 0.95, 2),
+            return {"type": "counter_proposal", "price": round(current_price * 0.95, 2),
                     "reasoning": f"Aggressive counter: only 5% lower at ${round(current_price * 0.95, 2)}."}
         else:
             # Aggressive seller: only accept if way above minimum, small concessions
             if current_price >= budget_limit * 1.3:
-                return {"type": "accept", "price": None,
+                return {"type": "acceptance", "price": None,
                         "reasoning": f"Price ${current_price} far exceeds minimum — accepting."}
-            return {"type": "counter_offer", "price": round(current_price * 1.05, 2),
+            return {"type": "counter_proposal", "price": round(current_price * 1.05, 2),
                     "reasoning": f"Aggressive counter: 5% higher at ${round(current_price * 1.05, 2)}."}
