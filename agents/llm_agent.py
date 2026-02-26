@@ -76,10 +76,31 @@ Respond in EXACT JSON format with no markdown wrappers or other text:
                 generated_text = response.get("message", {}).get("content", "")
                 tokens_used = response.get("eval_count", 0) + response.get("prompt_eval_count", 0)
 
-                # Clean up any potential markdown formatting
-                generated_text = generated_text.replace("```json", "").replace("```", "").strip()
-
-                result = json.loads(generated_text)
+                # --- Robust JSON Parsing ---
+                # 1. Strip markdown code blocks
+                clean_text = generated_text.replace("```json", "").replace("```", "").strip()
+                
+                # 2. Extract content between first { and last }
+                import re
+                try:
+                    result = json.loads(clean_text)
+                except json.JSONDecodeError:
+                    match = re.search(r'(\{.*\})', clean_text, re.DOTALL)
+                    if match:
+                        try:
+                            result = json.loads(match.group(1))
+                        except json.JSONDecodeError as jde:
+                            # 3. Final attempt: basic text cleanup (trailing commas etc)
+                            final_attempt = match.group(1)
+                            # Remove trailing commas before closing braces
+                            final_attempt = re.sub(r',\s*\}', '}', final_attempt)
+                            final_attempt = re.sub(r',\s*\]', ']', final_attempt)
+                            try:
+                                result = json.loads(final_attempt)
+                            except:
+                                raise jde # Re-raise original error if cleanup fails
+                    else:
+                        raise ValueError("No JSON object found in response.")
 
                 # Protocol Normalization (ACP Mappings)
                 type_map = {

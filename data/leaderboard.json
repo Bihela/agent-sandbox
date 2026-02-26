@@ -1,21 +1,21 @@
 {
   "strategies": {
     "aggressive": {
-      "runs": 13,
+      "runs": 18,
       "agreements": 0,
-      "total_turns": 72,
+      "total_turns": 111,
       "concessions": 0
     },
     "balanced": {
-      "runs": 9,
+      "runs": 15,
       "agreements": 0,
-      "total_turns": 71,
+      "total_turns": 113,
       "concessions": 0
     },
     "conservative": {
-      "runs": 8,
+      "runs": 9,
       "agreements": 0,
-      "total_turns": 57,
+      "total_turns": 60,
       "concessions": 0
     },
     "adaptive": {
@@ -27,10 +27,21 @@
   },
   "models": {
     "mistral": {
-      "runs": 19,
+      "runs": 25,
       "agreements": 0,
-      "avg_latency_ms": 9460.468421052632
+      "avg_latency_ms": 9414.868000000002
     }
   },
-  "last_updated": "2026-02-26T18:19:11.186465"
+  "last_updated": "2026-02-26T22:51:56.060646",
+  "h2h_strategies": {
+    "aggressive_vs_balanced": {
+      "runs": 5,
+      "agreements": 0
+    },
+    "conservative_vs_balanced": {
+      "runs": 1,
+      "agreements": 0
+    }
+  },
+  "h2h_models": {}
 }

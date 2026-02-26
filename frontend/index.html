@@ -11,26 +11,35 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
     <style>
         :root {
-            --bg: #0a0e1a;
-            --surface: #111827;
-            --surface-2: #1a2236;
-            --primary: #6366f1;
-            --primary-glow: rgba(99, 102, 241, 0.25);
-            --primary-hover: #4f46e5;
-            --text: #f1f5f9;
-            --text-muted: #64748b;
-            --text-dim: #475569;
-            --border: #1e293b;
-            --accent: #10b981;
-            --accent-glow: rgba(16, 185, 129, 0.2);
-            --danger: #ef4444;
-            --danger-glow: rgba(239, 68, 68, 0.15);
-            --warning: #f59e0b;
-            --warning-glow: rgba(245, 158, 11, 0.15);
-            --buyer-color: #38bdf8;
-            --seller-color: #f472b6;
-            --radius: 12px;
-            --radius-sm: 8px;
+            /* Professional Midnight Palette */
+            --bg: #0d1117;
+            --sidebar-bg: #161b22;
+            --surface: #1c2128;
+            --surface-hover: #21262d;
+            --primary: #58a6ff;
+            --primary-dim: rgba(88, 166, 255, 0.1);
+            --text: #c9d1d9;
+            --text-heading: #f0f6fc;
+            --text-muted: #8b949e;
+            --text-dim: #484f58;
+            --border: #30363d;
+            --accent: #3fb950;
+            --accent-dim: rgba(63, 185, 80, 0.15);
+            --danger: #f85149;
+            --danger-dim: rgba(248, 81, 73, 0.15);
+            --warning: #d29922;
+            --warning-dim: rgba(210, 153, 34, 0.15);
+            --buyer-color: #79c0ff;
+            --seller-color: #ff7b72;
+            --radius: 6px;
+            --radius-sm: 4px;
+            --sidebar-width: 260px;
+
+            /* Utility Glows */
+            --primary-glow: rgba(88, 166, 255, 0.15);
+            --accent-glow: rgba(63, 185, 80, 0.15);
+            --danger-glow: rgba(248, 81, 73, 0.15);
+            --warning-glow: rgba(210, 153, 34, 0.15);
         }
 
         * {
@@ -46,146 +55,152 @@
             display: flex;
             height: 100vh;
             overflow: hidden;
+            line-height: 1.5;
         }
 
         /* ─── Sidebar ─── */
         #sidebar {
-            width: 340px;
-            min-width: 340px;
-            background: var(--surface);
+            width: var(--sidebar-width);
+            min-width: var(--sidebar-width);
+            background: var(--sidebar-bg);
             border-right: 1px solid var(--border);
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100vh;
+            z-index: 100;
         }
 
         .sidebar-header {
-            padding: 24px 20px 16px;
+            padding: 24px 20px;
             border-bottom: 1px solid var(--border);
         }
 
         .sidebar-header h1 {
-            font-size: 1.25rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--primary), #a78bfa);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            letter-spacing: -0.3px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-heading);
+            letter-spacing: -0.2px;
+            text-transform: uppercase;
         }
 
         .sidebar-header .subtitle {
-            font-size: 0.75rem;
-            color: var(--text-dim);
+            font-size: 0.7rem;
+            color: var(--text-muted);
             margin-top: 4px;
         }
 
-        /* Controls */
-        .controls {
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .controls h3 {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 1.2px;
-            color: var(--text-dim);
-            margin-bottom: 12px;
-            font-weight: 600;
-        }
-
-        .input-row {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 12px;
-        }
-
-        .input-group {
-            flex: 1;
+        /* Pro Nav Sections */
+        .nav-sections {
+            padding: 20px 10px;
             display: flex;
             flex-direction: column;
             gap: 4px;
         }
 
-        .input-group label {
-            font-size: 0.65rem;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            color: var(--text-dim);
+        .nav-item {
+            padding: 10px 14px;
+            font-size: 0.85rem;
             font-weight: 500;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: var(--radius);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
         }
 
-        .input-group input {
-            background: rgba(0, 0, 0, 0.3);
+        .nav-item:hover {
+            background: var(--surface);
+            color: var(--text-heading);
+        }
+
+        .nav-item.active {
+            background: var(--primary-dim);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* Controls Panel */
+        .sidebar-controls {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .section-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-dim);
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+
+        .input-group {
+            margin-bottom: 16px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .input-group input,
+        .input-group select {
+            width: 100%;
+            background: var(--surface);
             border: 1px solid var(--border);
-            color: var(--text);
+            color: var(--text-heading);
             padding: 8px 10px;
             border-radius: var(--radius-sm);
             font-size: 0.85rem;
-            font-family: inherit;
             outline: none;
-            transition: border 0.2s, box-shadow 0.2s;
         }
 
-        .input-group input:focus {
+        /* Direct option styling for theme consistency */
+        select option {
+            background-color: var(--surface-bg, #1c2128);
+            color: var(--text-heading);
+        }
+
+        .input-group input:focus,
+        .input-group select:focus {
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px var(--primary-glow);
         }
 
         .btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            background: linear-gradient(135deg, var(--primary), #7c3aed);
-            color: white;
+            background: var(--primary);
+            color: var(--bg);
             border: none;
-            padding: 10px 16px;
+            padding: 12px;
             border-radius: var(--radius-sm);
             font-weight: 600;
             font-size: 0.85rem;
             cursor: pointer;
             width: 100%;
-            transition: all 0.2s ease;
-            font-family: inherit;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, transparent, rgba(255, 255, 255, 0.1));
-            opacity: 0;
             transition: opacity 0.2s;
         }
 
-        .btn:hover::after {
-            opacity: 1;
-        }
-
         .btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 15px var(--primary-glow);
+            opacity: 0.9;
         }
 
         .btn:active {
-            transform: translateY(0);
+            transform: scale(0.98);
         }
 
         .btn.secondary {
             background: transparent;
             border: 1px solid var(--border);
+            color: var(--text-heading);
             margin-top: 8px;
-            font-weight: 500;
-        }
-
-        .btn.secondary:hover {
-            background: rgba(255, 255, 255, 0.03);
-            border-color: var(--text-dim);
-            box-shadow: none;
         }
 
         .btn.loading-btn {
@@ -278,15 +293,64 @@
         /* ─── Main Panel ─── */
         #main {
             flex: 1;
+            margin-left: var(--sidebar-width);
+            height: 100vh;
             overflow-y: auto;
-            padding: 24px 32px;
+            position: relative;
             display: flex;
             flex-direction: column;
-            gap: 20px;
             background:
                 radial-gradient(ellipse at 20% 0%, rgba(99, 102, 241, 0.06), transparent 50%),
                 radial-gradient(ellipse at 80% 100%, rgba(16, 185, 129, 0.04), transparent 50%),
                 var(--bg);
+        }
+
+        header {
+            height: 60px;
+            background: var(--surface-1);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+            position: sticky;
+            top: 0;
+            z-index: 90;
+            backdrop-filter: blur(12px);
+        }
+
+        .header-nav {
+            display: flex;
+            gap: 30px;
+        }
+
+        .header-nav-item {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-dim);
+            cursor: pointer;
+            line-height: 60px;
+            position: relative;
+            transition: color 0.2s;
+        }
+
+        .header-nav-item:hover {
+            color: white;
+        }
+
+        .header-nav-item.active {
+            color: var(--primary);
+        }
+
+        .header-nav-item.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--primary);
+            box-shadow: 0 0 10px var(--primary-glow);
         }
 
         /* Welcome */
@@ -297,7 +361,7 @@
             justify-content: center;
             flex: 1;
             text-align: center;
-            animation: fadeIn 0.6s ease-out;
+            animation: fadeIn 0.4s ease-out;
         }
 
         .welcome-icon {
@@ -567,12 +631,109 @@
         }
 
         .step-reasoning::before {
-            content: '💭 ';
+            content: 'Analysis: ';
         }
 
-        /* ─── Failure Analysis Panel ─── */
-        .failure-panel {
-            border: 1px solid rgba(239, 68, 68, 0.15);
+        /* ─── Overlays & Modals ─── */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .settings-modal {
+            background: var(--surface-1);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            width: 400px;
+            padding: 24px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            color: var(--text-heading);
+        }
+
+        .close-btn {
+            cursor: pointer;
+            color: var(--text-dim);
+            font-size: 1.2rem;
+        }
+
+        .close-btn:hover {
+            color: white;
+        }
+
+        /* ─── Intelligence Hub View ─── */
+        #rankings-view {
+            padding: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .hub-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+        }
+
+        .rank-card {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: transform 0.2s;
+        }
+
+        .rank-card:hover {
+            transform: translateX(5px);
+            border-color: var(--primary);
+        }
+
+        .rank-number {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            width: 40px;
+        }
+
+        .settings-toggle {
+            margin-top: auto;
+            padding: 15px 20px;
+            border-top: 1px solid var(--border);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            transition: color 0.2s;
+        }
+
+        .settings-toggle:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.03);
         }
 
         .risk-score-container {
@@ -1039,13 +1200,191 @@
             font-weight: 500;
         }
 
-        @media (max-width: 1200px) {
-            .two-col {
-                grid-template-columns: 1fr;
+        /* ─── Arena Styles ─── */
+        .arena-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+            animation: fadeIn 0.8s ease-out;
+            padding-bottom: 50px;
+        }
+
+        .battle-view {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+            width: 100%;
+            max-width: 1000px;
+            perspective: 1000px;
+        }
+
+        .fighter-card {
+            flex: 1;
+            background: rgba(30, 41, 59, 0.7);
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            padding: 30px 20px;
+            text-align: center;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .fighter-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+            transform: rotate(45deg);
+            pointer-events: none;
+        }
+
+        .fighter-card.red {
+            border-color: var(--danger);
+            box-shadow: 0 0 30px var(--danger-glow);
+        }
+
+        .fighter-card.blue {
+            border-color: var(--buyer-color);
+            box-shadow: 0 0 30px var(--primary-glow);
+        }
+
+        .fighter-card:hover {
+            transform: scale(1.02) translateY(-5px);
+        }
+
+        .fighter-role {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            font-weight: 800;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .red .fighter-role {
+            color: var(--danger);
+        }
+
+        .blue .fighter-role {
+            color: var(--buyer-color);
+        }
+
+        .fighter-name {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+        }
+
+        .vs-badge {
+            font-size: 3rem;
+            font-weight: 900;
+            color: white;
+            text-shadow: 0 0 20px var(--primary), 0 0 40px var(--danger);
+            font-style: italic;
+            z-index: 10;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+
+            0%,
+            100% {
+                transform: scale(1);
             }
 
-            .metrics-grid {
-                grid-template-columns: repeat(2, 1fr);
+            50% {
+                transform: scale(1.15);
+            }
+        }
+
+        .fighter-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            text-align: left;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: var(--radius-sm);
+        }
+
+        .battle-btn {
+            background: linear-gradient(135deg, #f43f5e, #e11d48);
+            padding: 18px 60px;
+            font-size: 1.5rem;
+            font-weight: 900;
+            border-radius: 40px;
+            border: none;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 0 30px rgba(225, 29, 72, 0.4);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .battle-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 50px rgba(225, 29, 72, 0.6);
+        }
+
+        .battle-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Nav Tabs */
+        .nav-tabs {
+            display: flex;
+            gap: 4px;
+            padding: 10px 20px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-dim);
+            cursor: pointer;
+            border-radius: var(--radius-sm);
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .nav-tab:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-muted);
+        }
+
+        .nav-tab.active {
+            background: var(--primary-glow);
+            color: var(--primary);
+        }
+
+        .arena-leaderboard {
+            width: 100%;
+            max-width: 800px;
+            margin-top: 40px;
+        }
+
+        @media (max-width: 800px) {
+            .battle-view {
+                flex-direction: column;
+            }
+
+            .vs-badge {
+                transform: rotate(90deg);
+                margin: -20px 0;
             }
         }
     </style>
@@ -1056,376 +1395,445 @@
     <!-- ═══ Sidebar ═══ -->
     <div id="sidebar">
         <div class="sidebar-header">
-            <h1>⚡ Agent Sandbox</h1>
-            <div class="subtitle">Multi-Agent Negotiation Simulator</div>
+            <h1>Agent Sandbox</h1>
+            <div class="subtitle">Autonomous Negotiation Research</div>
         </div>
 
-        <div class="controls">
-            <h3>Scenario Settings</h3>
-            <div class="input-row" style="margin-bottom: 16px;">
+        <div class="sidebar-controls" id="controls-panel">
+            <div class="section-label">Simulation Parameters</div>
+            <div class="input-group">
+                <label>Market Scenario</label>
+                <select id="scenario-type" onchange="toggleMultiAgentUI()">
+                    <option value="price_negotiation">1v1 Price Negotiation</option>
+                    <option value="multi_vendor">Multi-Vendor Procurement</option>
+                </select>
+            </div>
+
+            <div id="1v1-controls">
+                <div style="display: flex; gap: 8px;">
+                    <div class="input-group">
+                        <label>Buyer Max $</label>
+                        <input type="number" id="buyer-max" value="150">
+                    </div>
+                    <div class="input-group">
+                        <label>Seller Min $</label>
+                        <input type="number" id="seller-min" value="100">
+                    </div>
+                </div>
+            </div>
+
+            <div id="multi-vendor-controls" class="hidden">
                 <div class="input-group">
-                    <label>Scenario Type</label>
-                    <select id="scenario-type" onchange="toggleMultiAgentUI()"
-                        style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border); color: var(--text); padding: 8px; border-radius: var(--radius-sm); outline: none;">
-                        <option value="price_negotiation">1v1 Negotiation</option>
-                        <option value="multi_vendor">Multi-Vendor (1vN)</option>
+                    <label>Vendor Count</label>
+                    <input type="number" id="num-vendors" value="3" min="2" max="5">
+                </div>
+            </div>
+
+            <button class="btn" id="start-btn" onclick="startSimulation()">Run Simulation</button>
+            <button class="btn secondary" id="refresh-history-btn" onclick="loadHistory()">Refresh Records</button>
+
+            <div class="section-label" style="margin-top: 24px;">Advanced Configuration</div>
+            <div class="input-group">
+                <label>Negotiation Tone</label>
+                <select id="cfg-style">
+                    <option value="formal">Formal</option>
+                    <option value="casual">Casual</option>
+                    <option value="competitive">Competitive</option>
+                    <option value="collaborative">Collaborative</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label>Model Temperature</label>
+                <input type="range" id="cfg-temp" min="0" max="2" step="0.1" value="0.7"
+                    oninput="document.getElementById('temp-val-sidebar').textContent=this.value">
+                <div style="font-size: 0.65rem; color: var(--primary); text-align: right;" id="temp-val-sidebar">0.7
+                </div>
+            </div>
+
+            <div class="section-label" style="margin-top: 24px;">Strategy Matrix</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div class="input-group">
+                    <label>Buyer Profile</label>
+                    <select id="cfg-buyer-strategy"></select>
+                </div>
+                <div class="input-group">
+                    <label>Buyer Risk</label>
+                    <select id="cfg-buyer-risk">
+                        <option value="medium">Medium</option>
+                        <option value="low">Low</option>
+                        <option value="high">High</option>
+                    </select>
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div class="input-group">
+                    <label>Seller Profile</label>
+                    <select id="cfg-seller-strategy"></select>
+                </div>
+                <div class="input-group">
+                    <label>Seller Risk</label>
+                    <select id="cfg-seller-risk">
+                        <option value="medium">Medium</option>
+                        <option value="low">Low</option>
+                        <option value="high">High</option>
                     </select>
                 </div>
             </div>
 
-            <div id="1v1-controls">
-                <div class="input-row">
-                    <div class="input-group">
-                        <label>Buyer Max $</label>
-                        <input type="number" id="buyer-max" value="150" style="width:100%">
-                    </div>
-                    <div class="input-group">
-                        <label>Seller Min $</label>
-                        <input type="number" id="seller-min" value="100" style="width:100%">
-                    </div>
+            <div id="benchmark-section"
+                style="margin-top: 24px; border-top: 1px solid var(--border); padding-top: 16px;">
+                <div class="section-label">Benchmarking & Experiments</div>
+                <button class="btn secondary" id="tournament-btn" style="font-size: 0.7rem; margin-bottom: 8px;"
+                    onclick="runTournament()">Execute Tournament Runner</button>
+                <div style="display: flex; gap: 4px; margin-bottom: 8px;">
+                    <button class="btn secondary" style="font-size: 0.65rem; padding: 6px; flex: 1;"
+                        onclick="runExperiment('Temperature Sweep')">Temp Sweep</button>
+                    <button class="btn secondary" style="font-size: 0.65rem; padding: 6px; flex: 1;"
+                        onclick="runExperiment('Strategy Benchmark')">Strat Benchmark</button>
+                </div>
+                <div id="tournament-status"
+                    style="font-size: 0.6rem; color: var(--text-muted); text-align: center; margin-bottom: 4px;"></div>
+                <div id="experiment-status" style="font-size: 0.6rem; color: var(--text-muted); text-align: center;">
                 </div>
             </div>
 
-            <div id="multi-vendor-controls" class="hidden" style="margin-bottom: 16px;">
-                <div class="input-group" style="margin-bottom: 8px;">
-                    <label>Number of Vendors</label>
-                    <input type="number" id="num-vendors" value="3" min="2" max="5" style="width:100%">
+            <div id="export-section" style="margin-top: 24px; border-top: 1px solid var(--border); padding-top: 16px;">
+                <div class="section-label">Data Export</div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn secondary" style="font-size: 0.7rem; padding: 6px;"
+                        onclick="exportDataset('json')">Export JSON</button>
+                    <button class="btn secondary" style="font-size: 0.7rem; padding: 6px;"
+                        onclick="exportDataset('csv')">Export CSV</button>
                 </div>
-            </div>
-            <button class="btn" id="start-btn" onclick="startSimulation()">
-                <span id="start-btn-text">▶ Start Simulation</span>
-            </button>
-            <button class="btn secondary" onclick="loadHistory()">↻ Refresh History</button>
-
-            <div class="config-toggle" onclick="toggleConfig()">
-                <span id="config-arrow">▶</span> Advanced Config
+                <div id="export-status"
+                    style="font-size: 0.65rem; color: var(--accent); margin-top: 4px; text-align: center;"></div>
             </div>
 
-            <div class="config-section" id="config-section">
-                <div class="config-row">
-                    <div class="config-group">
-                        <label>Style</label>
-                        <select id="cfg-style">
-                            <option value="formal">Formal</option>
-                            <option value="casual">Casual</option>
-                            <option value="competitive">Competitive</option>
-                            <option value="collaborative">Collaborative</option>
-                        </select>
-                    </div>
-                    <div class="config-group">
-                        <label>Temperature</label>
-                        <input type="range" id="cfg-temp" min="0" max="2" step="0.1" value="0.7"
-                            oninput="document.getElementById('temp-val').textContent=this.value">
-                        <div class="temp-display" id="temp-val">0.7</div>
-                    </div>
-                </div>
-                <div class="config-row">
-                    <div class="config-group">
-                        <label>Buyer Strategy</label>
-                        <select id="cfg-buyer-strategy">
-                            <option value="adaptive">Adaptive</option>
-                            <option value="aggressive">Aggressive</option>
-                            <option value="cooperative">Cooperative</option>
-                            <option value="analytical">Analytical</option>
-                        </select>
-                    </div>
-                    <div class="config-group">
-                        <label>Buyer Risk</label>
-                        <select id="cfg-buyer-risk">
-                            <option value="medium">Medium</option>
-                            <option value="low">Low</option>
-                            <option value="high">High</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="config-row">
-                    <div class="config-group">
-                        <label>Seller Strategy</label>
-                        <select id="cfg-seller-strategy">
-                            <option value="adaptive">Adaptive</option>
-                            <option value="aggressive">Aggressive</option>
-                            <option value="cooperative">Cooperative</option>
-                            <option value="analytical">Analytical</option>
-                        </select>
-                    </div>
-                    <div class="config-group">
-                        <label>Seller Risk</label>
-                        <select id="cfg-seller-risk">
-                            <option value="medium">Medium</option>
-                            <option value="low">Low</option>
-                            <option value="high">High</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
+            <!-- Removed Redundant Rankings/Adversarial from sidebar -->
         </div>
 
-        <div class="history-section">
-            <h3>Past Runs</h3>
-            <div id="history-container">
-                <div style="color: var(--text-dim); font-size: 0.8rem; text-align: center; padding: 20px 0;">Loading...
+        <div class="settings-toggle" onclick="toggleSettingsOverlay(true)">
+            <span>System Robustness & Config</span>
+        </div>
+
+        <div class="history-section" style="border-top: 1px solid var(--border);">
+            <div class="section-label" style="padding: 10px 20px 0;">Simulation History</div>
+            <div id="history-container" style="padding: 10px 20px;">
+                <!-- Records injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ System Settings Overlay ═══ -->
+    <div id="settings-overlay" class="overlay">
+        <div class="settings-modal">
+            <div class="modal-header">
+                <h3>System Robustness & Config</h3>
+                <div class="close-btn" onclick="toggleSettingsOverlay(false)">✕</div>
+            </div>
+
+            <div class="input-group">
+                <label>Market Scenario Logic</label>
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom: 12px;">
+                    <input type="checkbox" id="red-team-enabled" style="width: auto;">
+                    <label for="red-team-enabled"
+                        style="font-size:0.85rem; color: var(--danger); margin-bottom: 0;">Enable Disruptive
+                        Testing</label>
                 </div>
             </div>
-        </div>
 
-        <div class="history-section">
-            <h3>🏆 Agent Tournament</h3>
-            <p style="font-size:0.7rem;color:var(--text-dim);margin:4px 0 8px 0;">Benchmarking round-robin between
-                strategies.</p>
-            <button class="btn secondary" style="width:100%;background:rgba(217,119,6,0.1);color:#d97706;"
-                id="tournament-btn" onclick="runTournament()">
-                🥇 Run Tournament
-            </button>
-            <div id="tournament-status"
-                style="font-size:0.7rem;color:var(--text-dim);text-align:center;margin-top:4px;">
+            <div id="adversarial-controls-area">
+                <label style="display:block; font-size:0.75rem; color:var(--text-dim); margin-bottom:10px;">Attack
+                    Probability (Disruption Frequency)</label>
+                <input type="range" id="attack-probability" min="0" max="100" value="20" style="width:100%;"
+                    oninput="document.getElementById('attack-prob-overlay-val').innerText = this.value + '%'">
+                <div style="text-align: right; font-size: 0.7rem; color: var(--primary); margin-top: 4px;"
+                    id="attack-prob-overlay-val">20%</div>
             </div>
-        </div>
 
-        <div class="history-section">
-            <h3>🔬 Experiment Lab</h3>
-            <p style="font-size:0.7rem;color:var(--text-dim);margin:4px 0 8px 0;">Research engine: Run parameter sweeps.
-            </p>
-            <div style="display:flex; flex-direction:column; gap:8px;">
-                <button class="btn secondary" style="width:100%;background:rgba(124,58,237,0.1);color:var(--primary);"
-                    onclick="runExperiment('Temperature Sweep')">
-                    🌡️ Run Temperature Sweep
-                </button>
-                <button class="btn secondary" style="width:100%;background:rgba(16,185,129,0.1);color:#10b981;"
-                    onclick="runExperiment('Strategy Benchmark')">
-                    ⚔️ Run Strategy Sweep
-                </button>
-            </div>
-            <div id="experiment-status"
-                style="font-size:0.7rem;color:var(--text-dim);text-align:center;margin-top:4px;">
+            <div style="margin-top: 24px; border-top: 1px solid var(--border); padding-top: 16px;">
+                <button class="btn" style="width: 100%; border-radius: 8px;"
+                    onclick="toggleSettingsOverlay(false)">Apply Configuration</button>
             </div>
         </div>
-
-        <div class="history-section">
-            <h3>📦 Export Dataset</h3>
-            <div style="display:flex;gap:6px;">
-                <button class="btn secondary" style="flex:1;font-size:0.75rem;padding:6px;"
-                    onclick="exportDataset('json')">
-                    📄 JSON
-                </button>
-                <button class="btn secondary" style="flex:1;font-size:0.75rem;padding:6px;"
-                    onclick="exportDataset('csv')">
-                    📊 CSV
-                </button>
-            </div>
-            <div id="export-status" style="font-size:0.7rem;color:var(--text-dim);text-align:center;margin-top:4px;">
-            </div>
-        </div>
-
-        <div class="history-section"
-            style="border-top: 1px solid rgba(239, 68, 68, 0.2); margin-top: 15px; padding-top: 15px;">
-            <h3 style="color: #ef4444;">👹 Red Team</h3>
-            <p style="font-size:0.7rem;color:var(--text-dim);margin:4px 0 8px 0;">Inject adversarial disruptions into
-                the simulation.</p>
-
-            <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
-                <input type="checkbox" id="red-team-enabled" style="cursor:pointer;">
-                <label for="red-team-enabled" style="font-size:0.8rem; color:var(--text-dim); cursor:pointer;">Enable
-                    Attacks</label>
-            </div>
-
-            <div id="red-team-controls" style="opacity:0.5; pointer-events:none; transition: opacity 0.2s;">
-                <div style="margin-bottom:8px;">
-                    <label style="display:block; font-size:0.7rem; color:var(--text-dim); margin-bottom:4px;">Attack
-                        Probability: <span id="attack-prob-val">20%</span></label>
-                    <input type="range" id="attack-probability" min="0" max="100" value="20" style="width:100%;"
-                        oninput="document.getElementById('attack-prob-val').innerText = this.value + '%'">
-                </div>
-            </div>
-        </div>
+    </div>
     </div>
 
     <!-- ═══ Main Content ═══ -->
     <div id="main">
+        <header>
+            <div class="header-nav">
+                <div class="header-nav-item active" id="tab-discovery" onclick="switchNav('discovery')">Ecosystem
+                    Discovery</div>
+                <div class="header-nav-item" id="tab-arena" onclick="switchNav('arena')">Performance Arena</div>
+                <div class="header-nav-item" id="tab-rankings" onclick="switchNav('rankings')">Intelligence Hub</div>
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-dim);">
+                System Status: <span style="color: var(--accent);">Operational</span>
+            </div>
+        </header>
 
-        <!-- Welcome State -->
-        <div id="welcome-state">
-            <div class="welcome-icon">🤖</div>
-            <h2>Discovery & Ecosystem</h2>
-            <p>Load autonomous agent cards to verify capabilities and compatibility.</p>
+        <div style="padding: 40px;">
+            <!-- Welcome State -->
+            <div id="welcome-state">
+                <h2>Discovery & Ecosystem</h2>
+                <p>Load autonomous agent cards to verify capabilities and compatibility.</p>
 
-            <div id="agent-discovery-area" class="agent-cards-grid">
-                <!-- Injected by JS -->
-                <div style="color: var(--text-dim); padding: 40px; grid-column: 1/-1;">Scanning for available agents...
+                <div id="agent-discovery-area" class="agent-cards-grid">
+                    <!-- Injected by JS -->
+                    <div style="color: var(--text-dim); padding: 40px; grid-column: 1/-1;">Scanning for available
+                        agents...
+                    </div>
+                </div>
+
+                <div id="compat-discovery-area"></div>
+            </div>
+
+            <!-- Agent Arena View -->
+            <div id="arena-view" class="hidden">
+                <div class="arena-container">
+                    <h2 style="font-size: 1.8rem; color: var(--text-heading); margin-bottom: 8px; font-weight: 600;">
+                        Performance Arena</h2>
+                    <p style="color: var(--text-muted); margin-bottom: 30px;">High-precision benchmarking for model
+                        negotiation capabilities.</p>
+
+                    <div class="battle-view">
+                        <!-- Red Fighter -->
+                        <div class="fighter-card red" style="cursor: pointer; position: relative;"
+                            title="Click to configure agent">
+                            <span class="fighter-role">Buyer Candidate</span>
+                            <div class="fighter-name">CHALLENGER A</div>
+                            <div class="fighter-stats">
+                                <div class="input-group">
+                                    <label>Strategy Profile</label>
+                                    <select id="arena-b-strat" class="arena-select"
+                                        style="background: var(--surface-hover);"></select>
+                                </div>
+                                <div class="input-group">
+                                    <label>Risk Threshold</label>
+                                    <select id="arena-b-risk" style="background: var(--surface-hover);">
+                                        <option value="medium">Medium</option>
+                                        <option value="low">Low</option>
+                                        <option value="high">High</option>
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label>Foundation Model</label>
+                                    <select id="arena-b-model" style="background: var(--surface-hover);">
+                                        <option value="mistral">Mistral (Local)</option>
+                                        <option value="llama3">Llama 3 (Local)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="vs-badge">VS</div>
+
+                        <!-- Blue Fighter -->
+                        <div class="fighter-card blue" style="cursor: pointer; position: relative;"
+                            title="Click to configure agent">
+                            <span class="fighter-role">Seller Candidate</span>
+                            <div class="fighter-name">CHALLENGER B</div>
+                            <div class="fighter-stats">
+                                <div class="input-group">
+                                    <label>Strategy Profile</label>
+                                    <select id="arena-s-strat" class="arena-select"
+                                        style="background: var(--surface-hover);"></select>
+                                </div>
+                                <div class="input-group">
+                                    <label>Risk Threshold</label>
+                                    <select id="arena-s-risk" style="background: var(--surface-hover);">
+                                        <option value="medium">Medium</option>
+                                        <option value="low">Low</option>
+                                        <option value="high">High</option>
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label>Foundation Model</label>
+                                    <select id="arena-s-model" style="background: var(--surface-hover);">
+                                        <option value="mistral">Mistral (Local)</option>
+                                        <option value="llama3">Llama 3 (Local)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Removed single model selector to use dual-model instead -->
+
+                    <button class="btn" id="fight-btn" onclick="startBattle()"
+                        style="width: 100%; max-width: 300px; padding: 14px; font-size: 1rem;">
+                        Execute Matchup Run
+                    </button>
+
+                    <!-- Redundant Leaderboard Removed: Intelligence Hub is now dedicated -->
                 </div>
             </div>
 
-            <div id="compat-discovery-area"></div>
+            <!-- Intelligence Hub View -->
+            <div id="rankings-view" class="hidden">
+                <h2 style="font-size: 1.8rem; color: var(--text-heading); margin-bottom: 8px; font-weight: 600;">
+                    Intelligence Hub</h2>
+                <p style="color: var(--text-muted); margin-bottom: 30px;">Global agent performance rankings and
+                    comparative
+                    metrics.</p>
 
-            <div id="leaderboard-panel" class="glass-panel" style="margin-top:20px;display:none;">
-                <div class="panel-header">
-                    <h2>🏆 Global Leaderboard</h2>
-                </div>
-                <div id="leaderboard-content">
-                    <div style="color:var(--text-dim);padding:20px;text-align:center;">No tournament data yet.</div>
+                <div id="hub-leaderboard-content">
+                    <!-- Injected by JS -->
+                    <div
+                        style="color: var(--text-dim); padding: 50px; text-align: center; background: var(--surface-2); border-radius: 12px; border: 1px dashed var(--border);">
+                        Initializing global performance analytics...
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Simulation View (hidden by default) -->
-        <div id="simulation-view" class="hidden">
-
-            <!-- Metrics Panel -->
-            <div class="glass-panel" id="metrics-panel">
-                <div class="panel-header">
-                    <h2>📊 Simulation Metrics</h2>
+            <!-- Simulation View (hidden by default) -->
+            <div id="simulation-view" class="hidden">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                    <h2 style="font-size: 1.25rem; font-weight: 600;">Simulation Analytics</h2>
                     <span id="sim-status-badge" class="badge"></span>
                 </div>
-                <div class="config-tags" id="config-display"></div>
-                <div class="metrics-grid">
-                    <div class="metric-card primary">
-                        <div class="metric-label">Total Turns</div>
-                        <div class="metric-value" id="m-turns">–</div>
-                        <div class="metric-sub" id="m-turns-sub"></div>
-                    </div>
-                    <div class="metric-card success">
-                        <div class="metric-label">Final Price</div>
-                        <div class="metric-value" id="m-price">–</div>
-                        <div class="metric-sub" id="m-price-sub"></div>
-                    </div>
-                    <div class="metric-card warning">
-                        <div class="metric-label">Efficiency</div>
-                        <div class="metric-value" id="m-efficiency">–</div>
-                        <div class="metric-sub">turns vs max</div>
-                    </div>
-                    <div class="metric-card danger">
-                        <div class="metric-label">Loop Risk</div>
-                        <div class="metric-value" id="m-loop">–</div>
-                        <div class="metric-sub" id="m-loop-sub"></div>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Chart + Aggregate Stats -->
-            <div class="two-col">
-                <!-- Price Over Time Graph -->
-                <div class="glass-panel">
-                    <div class="panel-header">
-                        <h3>📈 Price Over Time</h3>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="priceChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Aggregate Stats -->
-                <div class="glass-panel" id="aggregate-panel">
-                    <div class="panel-header">
-                        <h3>🏆 Session Analytics</h3>
-                    </div>
-                    <div class="metrics-grid" style="grid-template-columns: 1fr 1fr;">
-                        <div class="metric-card success">
-                            <div class="metric-label">Success Rate</div>
-                            <div class="metric-value" id="a-success-rate">–</div>
-                        </div>
+                <!-- Metrics Panel -->
+                <div id="metrics-panel">
+                    <div class="section-label">Performance Metrics</div>
+                    <div class="config-tags" id="config-display"></div>
+                    <div class="metrics-grid">
                         <div class="metric-card primary">
-                            <div class="metric-label">Total Runs</div>
-                            <div class="metric-value" id="a-total-runs">–</div>
+                            <div class="metric-label">Total Turns</div>
+                            <div class="metric-value" id="m-turns">–</div>
+                            <div class="metric-sub" id="m-turns-sub"></div>
+                        </div>
+                        <div class="metric-card success">
+                            <div class="metric-label">Final Price</div>
+                            <div class="metric-value" id="m-price">–</div>
+                            <div class="metric-sub" id="m-price-sub"></div>
                         </div>
                         <div class="metric-card warning">
-                            <div class="metric-label">Avg Turns</div>
-                            <div class="metric-value" id="a-avg-turns">–</div>
+                            <div class="metric-label">Efficiency</div>
+                            <div class="metric-value" id="m-efficiency">–</div>
+                            <div class="metric-sub">turns vs max</div>
                         </div>
                         <div class="metric-card danger">
-                            <div class="metric-label">Deadlocks</div>
-                            <div class="metric-value" id="a-deadlocks">–</div>
+                            <div class="metric-label">Loop Risk</div>
+                            <div class="metric-value" id="m-loop">–</div>
+                            <div class="metric-sub" id="m-loop-sub"></div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Failure Analysis Panel -->
-            <div class="glass-panel failure-panel hidden" id="failure-panel">
-                <div class="panel-header">
-                    <h2>🚨 Failure Analysis</h2>
-                </div>
-                <div id="risk-score-area" class="risk-score-container"></div>
-                <div id="failure-cards-container" class="failure-cards"></div>
-            </div>
+                <!-- Chart + Aggregate Stats -->
+                <div class="two-col">
+                    <div class="glass-panel">
+                        <div class="section-label">Price Equilibrium Curve</div>
+                        <div class="chart-container">
+                            <canvas id="priceChart"></canvas>
+                        </div>
+                    </div>
 
-            <!-- Telemetry Panel -->
-            <div class="glass-panel hidden" id="telemetry-panel">
-                <div class="panel-header">
-                    <h2>📡 Telemetry</h2>
+                    <!-- Aggregate Stats -->
+                    <div class="glass-panel" id="aggregate-panel">
+                        <div class="section-label">Session Aggregates</div>
+                        <div class="metrics-grid" style="grid-template-columns: 1fr 1fr;">
+                            <div class="metric-card success">
+                                <div class="metric-label">Success Rate</div>
+                                <div class="metric-value" id="a-success-rate">–</div>
+                            </div>
+                            <div class="metric-card primary">
+                                <div class="metric-label">Total Runs</div>
+                                <div class="metric-value" id="a-total-runs">–</div>
+                            </div>
+                            <div class="metric-card warning">
+                                <div class="metric-label">Avg Turns</div>
+                                <div class="metric-value" id="a-avg-turns">–</div>
+                            </div>
+                            <div class="metric-card danger">
+                                <div class="metric-label">Deadlocks</div>
+                                <div class="metric-value" id="a-deadlocks">–</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="telemetry-grid" id="tel-metrics"></div>
-                <div class="latency-bars" id="tel-latency-bars"></div>
-            </div>
 
-            <!-- Decision Timeline -->
-            <div class="glass-panel">
-                <div class="panel-header">
-                    <h2>🕒 Decision Timeline</h2>
+                <!-- Failure Analysis Panel -->
+                <div class="glass-panel failure-panel hidden" id="failure-panel">
+                    <div class="section-label">Protocol Anomaly Analysis</div>
+                    <div id="risk-score-area" class="risk-score-container"></div>
+                    <div id="failure-cards-container" class="failure-cards"></div>
                 </div>
-                <div id="timeline-container" class="timeline">
-                    <!-- Steps injected by JS -->
-                </div>
-            </div>
 
+                <!-- Telemetry Panel -->
+                <div class="glass-panel hidden" id="telemetry-panel">
+                    <div class="section-label">System Telemetry</div>
+                    <div class="telemetry-grid" id="tel-metrics"></div>
+                    <div class="latency-bars" id="tel-latency-bars"></div>
+                </div>
+
+                <!-- Decision Timeline -->
+                <div class="glass-panel">
+                    <div class="section-label">Decision Log</div>
+                    <div id="timeline-container" class="timeline">
+                        <!-- Steps injected by JS -->
+                    </div>
+                </div>
+
+            </div>
         </div>
-    </div>
 
-    <script>
-        const API_BASE = window.location.origin;
-        let priceChart = null;
-        let activeSimId = null;
+        <script>
+            const API_BASE = window.location.origin;
+            let priceChart = null;
+            let activeSimId = null;
 
-        document.addEventListener('DOMContentLoaded', () => {
-            loadHistory();
-            loadConfigOptions();
-            loadAgentCards();
-            loadLeaderboard();
+            document.addEventListener('DOMContentLoaded', () => {
+                loadHistory();
+                loadConfigOptions();
+                loadAgentCards();
+                loadLeaderboard();
+            });
 
-            // Red Team UI Toggles
-            const redTeamToggle = document.getElementById('red-team-enabled');
-            const redTeamControls = document.getElementById('red-team-controls');
-            if (redTeamToggle) {
-                redTeamToggle.addEventListener('change', () => {
-                    redTeamControls.style.opacity = redTeamToggle.checked ? '1' : '0.5';
-                    redTeamControls.style.pointerEvents = redTeamToggle.checked ? 'all' : 'none';
-                });
+            function toggleSettingsOverlay(show) {
+                const overlay = document.getElementById('settings-overlay');
+                overlay.style.display = show ? 'flex' : 'none';
             }
-        });
 
-        function toggleConfig() {
-            const section = document.getElementById('config-section');
-            const arrow = document.getElementById('config-arrow');
-            section.classList.toggle('open');
-            arrow.textContent = section.classList.contains('open') ? '▼' : '▶';
-        }
-
-        // ─── History ───
-        async function loadHistory() {
-            const container = document.getElementById('history-container');
-            container.innerHTML = '<div style="color:var(--text-dim);font-size:0.8rem;text-align:center;padding:20px 0;">Loading...</div>';
-            try {
-                const res = await fetch(`${API_BASE}/simulation/replay`);
-                const json = await res.json();
-                renderHistory(json.data.reverse());
-                updateAggregateStats(json.data);
-            } catch (e) {
-                container.innerHTML = '<div style="color:var(--danger);font-size:0.8rem;text-align:center;">Failed to load</div>';
+            function toggleConfig() {
+                const section = document.getElementById('config-section');
+                const arrow = document.getElementById('config-arrow');
+                section.classList.toggle('open');
+                arrow.textContent = section.classList.contains('open') ? ' (Collapse)' : ' (Expand)';
+                arrow.style.fontSize = '0.6rem';
             }
-        }
 
-        function renderHistory(runs) {
-            const container = document.getElementById('history-container');
-            if (!runs || runs.length === 0) {
-                container.innerHTML = '<div style="color:var(--text-dim);font-size:0.8rem;text-align:center;padding:20px 0;">No simulations yet. Start one above!</div>';
-                return;
+            // ─── History ───
+            async function loadHistory() {
+                const container = document.getElementById('history-container');
+                container.innerHTML = '<div style="color:var(--text-dim);font-size:0.8rem;text-align:center;padding:20px 0;">Loading...</div>';
+                try {
+                    const res = await fetch(`${API_BASE}/simulation/replay`);
+                    const json = await res.json();
+                    renderHistory(json.data.reverse());
+                    updateAggregateStats(json.data);
+                } catch (e) {
+                    container.innerHTML = '<div style="color:var(--danger);font-size:0.8rem;text-align:center;">Failed to load</div>';
+                }
             }
-            container.innerHTML = '';
-            runs.forEach(run => {
-                const el = document.createElement('div');
-                el.className = 'history-item' + (run.simulation_id === activeSimId ? ' active' : '');
-                el.id = `hist-${run.simulation_id}`;
-                el.onclick = () => showSimulation(run);
-                const shortId = run.simulation_id.substring(0, 8);
-                el.innerHTML = `
+
+            function renderHistory(runs) {
+                const container = document.getElementById('history-container');
+                if (!runs || runs.length === 0) {
+                    container.innerHTML = '<div style="color:var(--text-dim);font-size:0.8rem;text-align:center;padding:20px 0;">No simulations yet. Start one above!</div>';
+                    return;
+                }
+                container.innerHTML = '';
+                runs.forEach(run => {
+                    const el = document.createElement('div');
+                    el.className = 'history-item' + (run.simulation_id === activeSimId ? ' active' : '');
+                    el.id = `hist-${run.simulation_id}`;
+                    el.onclick = () => showSimulation(run);
+                    const shortId = run.simulation_id.substring(0, 8);
+                    el.innerHTML = `
                     <div class="id">${shortId}</div>
                     <div class="meta">
                         <span class="badge ${run.status}">${run.status}</span>
@@ -1433,473 +1841,589 @@
                         <span style="color:var(--accent);font-weight:600">${run.final_price ? '$' + run.final_price.toFixed(0) : '—'}</span>
                     </div>
                 `;
-                container.appendChild(el);
-            });
-        }
+                    container.appendChild(el);
+                });
+            }
 
-        // ─── Aggregate Stats ───
-        function updateAggregateStats(runs) {
-            if (!runs || runs.length === 0) return;
-            const total = runs.length;
-            const agreements = runs.filter(r => r.status === 'agreement' || r.status === 'success').length;
-            const deadlocks = runs.filter(r => r.status === 'error' || r.status === 'failure').length;
-            const avgTurns = (runs.reduce((a, r) => a + r.turns, 0) / total).toFixed(1);
-            const successRate = ((agreements / total) * 100).toFixed(0);
+            // ─── Aggregate Stats ───
+            function updateAggregateStats(runs) {
+                if (!runs || runs.length === 0) return;
+                const total = runs.length;
+                const agreements = runs.filter(r => r.status === 'agreement' || r.status === 'success').length;
+                const deadlocks = runs.filter(r => r.status === 'error' || r.status === 'failure').length;
+                const avgTurns = (runs.reduce((a, r) => a + r.turns, 0) / total).toFixed(1);
+                const successRate = ((agreements / total) * 100).toFixed(0);
 
-            document.getElementById('a-success-rate').textContent = successRate + '%';
-            document.getElementById('a-total-runs').textContent = total;
-            document.getElementById('a-avg-turns').textContent = avgTurns;
-            document.getElementById('a-deadlocks').textContent = deadlocks;
-        }
+                document.getElementById('a-success-rate').textContent = successRate + '%';
+                document.getElementById('a-total-runs').textContent = total;
+                document.getElementById('a-avg-turns').textContent = avgTurns;
+                document.getElementById('a-deadlocks').textContent = deadlocks;
+            }
 
-        // ─── Start Simulation ───
-        async function startSimulation() {
-            const btn = document.getElementById('start-btn');
-            const btnText = document.getElementById('start-btn-text');
-            const bMax = parseFloat(document.getElementById('buyer-max').value) || 150;
-            const sMin = parseFloat(document.getElementById('seller-min').value) || 100;
+            async function startSimulation() {
+                const btn = document.getElementById('start-btn');
+                const bMax = parseFloat(document.getElementById('buyer-max').value) || 150;
+                const sMin = parseFloat(document.getElementById('seller-min').value) || 100;
 
-            btn.classList.add('loading-btn');
-            btnText.textContent = '⏳ Running...';
+                btn.classList.add('loading-btn');
+                btn.textContent = 'INITIALIZING...';
 
-            // NEW: Scenario Type
-            const scenarioType = document.getElementById('scenario-type').value;
-            const numVendors = parseInt(document.getElementById('num-vendors').value) || 2;
+                const scenarioType = document.getElementById('scenario-type').value;
+                const numVendors = parseInt(document.getElementById('num-vendors').value) || 2;
 
-            // Gather config
-            let payload = {
-                scenario_type: scenarioType,
-                buyer_max: bMax,
-                seller_min: sMin,
-                max_turns: 20,
-                negotiation_style: document.getElementById('cfg-style').value,
-                temperature: parseFloat(document.getElementById('cfg-temp').value),
-                red_team_config: {
-                    enabled: document.getElementById('red-team-enabled').checked,
-                    attack_probability: parseFloat(document.getElementById('attack-probability').value) / 100,
-                }
-            };
+                let payload = {
+                    scenario_type: scenarioType,
+                    buyer_max: bMax,
+                    seller_min: sMin,
+                    max_turns: 20,
+                    negotiation_style: document.getElementById('cfg-style').value,
+                    temperature: parseFloat(document.getElementById('cfg-temp').value),
+                    red_team_config: {
+                        enabled: document.getElementById('red-team-enabled').checked,
+                        attack_probability: parseFloat(document.getElementById('attack-probability').value) / 100,
+                    }
+                };
 
-            if (scenarioType === 'multi_vendor') {
-                payload.num_vendors = numVendors;
-                payload.agents_configs = [
-                    { name: "Global Buyer", role: "buyer", strategy: document.getElementById('cfg-buyer-strategy').value, risk_level: document.getElementById('cfg-buyer-risk').value, temperature: parseFloat(document.getElementById('cfg-temp').value) }
-                ];
-                for (let i = 0; i < numVendors; i++) {
-                    payload.agents_configs.push({
-                        name: `Vendor ${i + 1}`,
-                        role: "seller",
+                if (scenarioType === 'multi_vendor') {
+                    payload.num_vendors = numVendors;
+                    payload.agents_configs = [
+                        { name: "Global Buyer", role: "buyer", strategy: document.getElementById('cfg-buyer-strategy').value, risk_level: document.getElementById('cfg-buyer-risk').value, temperature: parseFloat(document.getElementById('cfg-temp').value) }
+                    ];
+                    for (let i = 0; i < numVendors; i++) {
+                        payload.agents_configs.push({
+                            name: `Vendor ${i + 1}`,
+                            role: "seller",
+                            strategy: document.getElementById('cfg-seller-strategy').value,
+                            risk_level: document.getElementById('cfg-seller-risk').value,
+                            temperature: parseFloat(document.getElementById('cfg-temp').value)
+                        });
+                    }
+                } else {
+                    payload.buyer_config = {
+                        strategy: document.getElementById('cfg-buyer-strategy').value,
+                        risk_level: document.getElementById('cfg-buyer-risk').value,
+                        temperature: parseFloat(document.getElementById('cfg-temp').value),
+                    };
+                    payload.seller_config = {
                         strategy: document.getElementById('cfg-seller-strategy').value,
                         risk_level: document.getElementById('cfg-seller-risk').value,
-                        temperature: parseFloat(document.getElementById('cfg-temp').value)
+                        temperature: parseFloat(document.getElementById('cfg-temp').value),
+                    };
+                }
+
+                try {
+                    const res = await fetch(`${API_BASE}/simulation/start`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
                     });
-                }
-            } else {
-                payload.buyer_config = {
-                    strategy: document.getElementById('cfg-buyer-strategy').value,
-                    risk_level: document.getElementById('cfg-buyer-risk').value,
-                    temperature: parseFloat(document.getElementById('cfg-temp').value),
-                };
-                payload.seller_config = {
-                    strategy: document.getElementById('cfg-seller-strategy').value,
-                    risk_level: document.getElementById('cfg-seller-risk').value,
-                    temperature: parseFloat(document.getElementById('cfg-temp').value),
-                };
-            }
-
-            try {
-                const res = await fetch(`${API_BASE}/simulation/start`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const json = await res.json();
-                if (json.status === "success") {
-                    showSimulation(json.data);
-                    loadHistory();
-                }
-            } catch (e) {
-                console.error("Simulation error:", e);
-            } finally {
-                btn.classList.remove('loading-btn');
-                btnText.textContent = '▶ Start Simulation';
-            }
-        }
-
-        // ─── Tournament ───
-        async function runTournament() {
-            const btn = document.getElementById('tournament-btn');
-            const status = document.getElementById('tournament-status');
-
-            btn.disabled = true;
-            btn.textContent = '⏳ Running...';
-            status.textContent = 'Round-robin benchmarking...';
-
-            try {
-                const res = await fetch(`${API_BASE}/tournament/run`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        strategies: ["aggressive", "balanced", "conservative", "adaptive"],
-                        models: ["mistral"],
-                        runs_per_match: 1
-                    })
-                });
-                const json = await res.json();
-                if (json.status === 'success') {
-                    status.textContent = `✅ Complete! ${json.data.total_simulations} sims run.`;
-                    loadLeaderboard();
-                    loadHistory();
-                }
-            } catch (e) {
-                status.textContent = '❌ Tournament failed.';
-            } finally {
-                btn.disabled = false;
-                btn.textContent = '🥇 Run Tournament';
-            }
-        }
-
-        async function runExperiment(type) {
-            const status = document.getElementById('experiment-status');
-            status.textContent = `⏳ Running ${type}...`;
-
-            let payload = { name: type, runs_per_config: 2 };
-            if (type === 'Temperature Sweep') {
-                payload.temperatures = [0.1, 0.5, 0.9];
-                payload.strategies = ['balanced'];
-            } else if (type === 'Strategy Benchmark') {
-                payload.strategies = ['aggressive', 'balanced', 'conservative', 'adaptive'];
-                payload.temperatures = [0.7];
-            }
-
-            try {
-                const res = await fetch(`${API_BASE}/experiment/run`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const json = await res.json();
-                if (json.status === 'success') {
-                    status.textContent = `✅ Experiment ${json.experiment_id.substring(0, 8)} started.`;
-                    setTimeout(() => {
+                    const json = await res.json();
+                    if (json.status === "success") {
+                        showSimulation(json.data);
                         loadHistory();
-                    }, 2000);
+                    }
+                } catch (e) {
+                    console.error("Simulation error:", e);
+                } finally {
+                    btn.classList.remove('loading-btn');
+                    btn.textContent = 'Run Simulation';
                 }
-            } catch (e) {
-                status.textContent = '❌ Experiment failed.';
             }
-        }
 
-        async function loadLeaderboard() {
-            const panel = document.getElementById('leaderboard-panel');
-            const content = document.getElementById('leaderboard-content');
+            async function runTournament() {
+                const btn = document.getElementById('tournament-btn');
+                const status = document.getElementById('tournament-status');
 
-            try {
-                const res = await fetch(`${API_BASE}/tournament/leaderboard`);
-                const data = await res.json();
+                btn.disabled = true;
+                btn.textContent = 'EXECUTING TOURNAMENT...';
+                status.textContent = 'Running comparative benchmark suite...';
 
-                if (data.status === 'success' && data.data.strategies.length > 0) {
-                    panel.style.display = 'block';
-                    let html = `
-                        <table style="width:100%;border-collapse:collapse;font-size:0.85rem;margin-top:10px;">
-                            <thead>
-                                <tr style="border-bottom:1px solid var(--border);color:var(--text-dim);text-align:left;">
-                                    <th style="padding:8px;">Strategy</th>
-                                    <th style="padding:8px;">Win Rate</th>
-                                    <th style="padding:8px;">Avg Turns</th>
-                                    <th style="padding:8px;">Runs</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                    `;
-
-                    data.data.strategies.forEach(s => {
-                        html += `
-                            <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
-                                <td style="padding:10px;"><strong>${s.name}</strong></td>
-                                <td style="padding:10px;"><span class="badge ${s.win_rate > 50 ? 'success' : 'warning'}">${s.win_rate}%</span></td>
-                                <td style="padding:10px;">${s.avg_turns}</td>
-                                <td style="padding:10px;color:var(--text-dim)">${s.total_runs}</td>
-                            </tr>
-                        `;
+                try {
+                    const res = await fetch(`${API_BASE}/tournament/run`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            strategies: ["aggressive", "balanced", "conservative", "adaptive"],
+                            models: ["mistral"],
+                            runs_per_match: 1
+                        })
                     });
-
-                    html += `</tbody></table>`;
-                    html += `<p style="font-size:0.65rem;color:var(--text-dim);margin-top:10px;text-align:right;">Last updated: ${new Date(data.data.last_updated).toLocaleString()}</p>`;
-                    content.innerHTML = html;
+                    const json = await res.json();
+                    if (json.status === 'success') {
+                        status.textContent = `COMPLETED: ${json.data.total_simulations} benchmark runs.`;
+                        loadLeaderboard();
+                        loadHistory();
+                    }
+                } catch (e) {
+                    status.textContent = 'ERROR: Benchmark failed.';
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = 'Execute Tournament Runner';
                 }
-            } catch (e) {
-                console.error("Leaderboard error:", e);
             }
-        }
 
-        function toggleMultiAgentUI() {
-            const scenarioType = document.getElementById('scenario-type').value;
-            const ctrl1v1 = document.getElementById('1v1-controls');
-            const ctrlMulti = document.getElementById('multi-vendor-controls');
+            async function runExperiment(type) {
+                const status = document.getElementById('experiment-status');
+                status.textContent = `EXECUTING ${type.toUpperCase()}...`;
 
-            if (scenarioType === 'multi_vendor') {
-                ctrl1v1.classList.add('hidden');
-                ctrlMulti.classList.remove('hidden');
-            } else {
-                ctrl1v1.classList.remove('hidden');
-                ctrlMulti.classList.add('hidden');
+                let payload = { name: type, runs_per_config: 2 };
+                if (type === 'Temperature Sweep') {
+                    payload.temperatures = [0.1, 0.5, 0.9];
+                    payload.strategies = ['balanced'];
+                } else if (type === 'Strategy Benchmark') {
+                    payload.strategies = ['aggressive', 'balanced', 'conservative', 'adaptive'];
+                    payload.temperatures = [0.7];
+                }
+
+                try {
+                    const res = await fetch(`${API_BASE}/experiment/run`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const json = await res.json();
+                    if (json.status === 'success') {
+                        status.textContent = `COMPLETED: Experiment ${json.experiment_id.substring(0, 8)} initialized.`;
+                        setTimeout(() => {
+                            loadHistory();
+                        }, 2000);
+                    }
+                } catch (e) {
+                    status.textContent = 'ERROR: Experiment runner failed.';
+                }
             }
-        }
 
-        // ─── Config Options ───
-        async function loadConfigOptions() {
-            try {
-                const res = await fetch(`${API_BASE}/config/options`);
-                const data = await res.json();
+            async function loadLeaderboard() {
+                const hubContent = document.getElementById('hub-leaderboard-content');
 
-                const buyerSelect = document.getElementById('cfg-buyer-strategy');
-                const sellerSelect = document.getElementById('cfg-seller-strategy');
+                try {
+                    const res = await fetch(`${API_BASE}/tournament/leaderboard`);
+                    const data = await res.json();
 
-                if (data.strategies) {
-                    const html = data.strategies.map(s => `<option value="${s}">${s.charAt(0).toUpperCase() + s.slice(1)}</option>`).join('');
-                    buyerSelect.innerHTML = html;
-                    sellerSelect.innerHTML = html;
+                    if (data.status === 'success') {
+                        const stats = data.data;
+
+                        // Dedicated Intelligence Hub Content
+                        if (stats.strategies && stats.strategies.length > 0) {
+                            let html = `
+                            <div class="hub-grid">
+                                <div class="glass-panel">
+                                    <div class="section-label">Strategic Performance Matrices</div>
+                                    <table style="width:100%;border-collapse:collapse;font-size:0.9rem;margin-top:10px;">
+                                        <thead>
+                                            <tr style="border-bottom:1px solid var(--border);color:var(--text-dim);text-align:left;">
+                                                <th style="padding:12px;">Ranking</th>
+                                                <th style="padding:12px;">Strategy Profile</th>
+                                                <th style="padding:12px;">Win Rate %</th>
+                                                <th style="padding:12px;">Resolution Efficiency</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>`;
+
+                            stats.strategies.sort((a, b) => b.win_rate - a.win_rate).forEach((s, idx) => {
+                                html += `
+                                <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+                                    <td style="padding:15px;"><span class="rank-number">#${idx + 1}</span></td>
+                                    <td style="padding:15px;"><strong>${s.name.toUpperCase()}</strong></td>
+                                    <td style="padding:15px;"><span class="badge ${s.win_rate > 50 ? 'success' : 'warning'}">${s.win_rate}%</span></td>
+                                    <td style="padding:15px;color:var(--text-dim)">${(1 / s.avg_turns * 10).toFixed(1)} Efficiency Index</td>
+                                </tr>`;
+                            });
+                            html += `</tbody></table></div>`;
+
+                            // Models Panel
+                            html += `<div class="glass-panel">
+                            <div class="section-label">Model Benchmarking</div>`;
+                            stats.models.forEach(m => {
+                                html += `
+                                <div class="metric-card primary" style="margin-bottom:15px; padding:20px;">
+                                    <div class="metric-label">LLM: ${m.name}</div>
+                                    <div class="metric-value" style="font-size:1.8rem;">${m.win_rate}%</div>
+                                    <div class="metric-sub" style="color:var(--accent)">Avg Latency: ${m.avg_latency}ms</div>
+                                </div>`;
+                            });
+                            html += `</div></div>`;
+
+                            hubContent.innerHTML = html;
+                        }
+                    }
+                } catch (e) {
+                    console.error("Leaderboard error:", e);
+                    hubContent.innerHTML = '<div style="color:var(--danger);padding:40px;text-align:center;">Failed to sync with global intelligence servers.</div>';
+                }
+            }
+
+            function toggleMultiAgentUI() {
+                const scenarioType = document.getElementById('scenario-type').value;
+                const ctrl1v1 = document.getElementById('1v1-controls');
+                const ctrlMulti = document.getElementById('multi-vendor-controls');
+
+                if (scenarioType === 'multi_vendor') {
+                    ctrl1v1.classList.add('hidden');
+                    ctrlMulti.classList.remove('hidden');
+                } else {
+                    ctrl1v1.classList.remove('hidden');
+                    ctrlMulti.classList.add('hidden');
+                }
+            }
+
+            // ─── Navigation ───
+            function switchNav(tab) {
+                const discoveryTab = document.getElementById('tab-discovery');
+                const arenaTab = document.getElementById('tab-arena');
+                const rankingsTab = document.getElementById('tab-rankings');
+
+                const welcome = document.getElementById('welcome-state');
+                const arena = document.getElementById('arena-view');
+                const sim = document.getElementById('simulation-view');
+                const rankings = document.getElementById('rankings-view');
+                const controls = document.getElementById('controls-panel');
+
+                // Handle nav items (new header structure)
+                document.querySelectorAll('.header-nav-item').forEach(el => el.classList.remove('active'));
+
+                if (tab === 'arena') {
+                    arenaTab.classList.add('active');
+                    arena.classList.remove('hidden');
+                    welcome.classList.add('hidden');
+                    sim.classList.add('hidden');
+                    rankings.classList.add('hidden');
+                    controls.style.display = 'none';
+                } else if (tab === 'rankings') {
+                    rankingsTab.classList.add('active');
+                    rankings.classList.remove('hidden');
+                    welcome.classList.add('hidden');
+                    arena.classList.add('hidden');
+                    sim.classList.add('hidden');
+                    controls.style.display = 'none';
+                    loadLeaderboard();
+                } else {
+                    discoveryTab.classList.add('active');
+                    welcome.classList.remove('hidden');
+                    arena.classList.add('hidden');
+                    sim.classList.add('hidden');
+                    rankings.classList.add('hidden');
+                    controls.style.display = 'block';
+                }
+            }
+
+            async function startBattle() {
+                const btn = document.getElementById('fight-btn');
+                btn.textContent = 'RUNNING BENCHMARK...';
+                btn.disabled = true;
+
+                const bStrat = document.getElementById('arena-b-strat').value;
+                const sStrat = document.getElementById('arena-s-strat').value;
+                const bModel = document.getElementById('arena-b-model').value;
+                const sModel = document.getElementById('arena-s-model').value;
+
+                const payload = {
+                    buyer_config: {
+                        strategy: bStrat,
+                        risk_level: document.getElementById('arena-b-risk').value,
+                        temperature: 0.7,
+                        model_name: bModel
+                    },
+                    seller_config: {
+                        strategy: sStrat,
+                        risk_level: document.getElementById('arena-s-risk').value,
+                        temperature: 0.7,
+                        model_name: sModel
+                    },
+                    buyer_max: 150,
+                    seller_min: 100
+                };
+
+                try {
+                    const res = await fetch(`${API_BASE}/tournament/battle`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const json = await res.json();
+                    if (json.status === 'success') {
+                        showSimulation(json.data);
+                        loadLeaderboard();
+                    }
+                } catch (e) {
+                    console.error("Arena Battle Failed:", e);
+                } finally {
+                    btn.textContent = 'Execute Matchup Run';
+                    btn.disabled = false;
+                }
+            }
+
+            // ─── Config Options ───
+            async function loadConfigOptions() {
+                try {
+                    const res = await fetch(`${API_BASE}/config/options`);
+                    const data = await res.json();
+
+                    const buyerSelect = document.getElementById('cfg-buyer-strategy');
+                    const sellerSelect = document.getElementById('cfg-seller-strategy');
+                    const arenaB = document.getElementById('arena-b-strat');
+                    const arenaS = document.getElementById('arena-s-strat');
+                    const arenaBModel = document.getElementById('arena-b-model');
+                    const arenaSModel = document.getElementById('arena-s-model');
+
+                    if (data.strategies) {
+                        const html = data.strategies.map(s => `<option value="${s}">${s.charAt(0).toUpperCase() + s.slice(1)}</option>`).join('');
+                        buyerSelect.innerHTML = html;
+                        sellerSelect.innerHTML = html;
+                        arenaB.innerHTML = html;
+                        arenaS.innerHTML = html;
+                    }
+
+                    if (data.models) {
+                        const modelHtml = data.models.map(m => `<option value="${m}">${m.charAt(0).toUpperCase() + m.slice(1)}</option>`).join('');
+                        arenaBModel.innerHTML = modelHtml;
+                        arenaSModel.innerHTML = modelHtml;
+                    }
 
                     // Set defaults
                     buyerSelect.value = 'adaptive';
                     sellerSelect.value = 'adaptive';
+                    arenaB.value = 'aggressive';
+                    arenaS.value = 'balanced';
+                    if (data.models && data.models.length > 0) {
+                        arenaBModel.value = data.models[0];
+                        arenaSModel.value = data.models[0];
+                    }
+                } catch (e) {
+                    console.warn("Failed to load config options dynamically, using defaults.");
                 }
-            } catch (e) {
-                console.warn("Failed to load config options dynamically, using defaults.");
             }
-        }
 
-        // ─── Show Simulation ───
-        function showSimulation(run) {
-            activeSimId = run.simulation_id;
-            document.getElementById('welcome-state').classList.add('hidden');
-            document.getElementById('simulation-view').classList.remove('hidden');
+            // ─── Show Simulation ───
+            function showSimulation(run) {
+                activeSimId = run.simulation_id;
+                document.getElementById('welcome-state').classList.add('hidden');
+                document.getElementById('simulation-view').classList.remove('hidden');
 
-            // Highlight active history item
-            document.querySelectorAll('.history-item').forEach(el => el.classList.remove('active'));
-            const activeEl = document.getElementById(`hist-${run.simulation_id}`);
-            if (activeEl) activeEl.classList.add('active');
+                // Highlight active history item
+                document.querySelectorAll('.history-item').forEach(el => el.classList.remove('active'));
+                const activeEl = document.getElementById(`hist-${run.simulation_id}`);
+                if (activeEl) activeEl.classList.add('active');
 
-            // Status badge
-            const badge = document.getElementById('sim-status-badge');
-            badge.textContent = run.status;
-            badge.className = `badge ${run.status}`;
+                // Status badge
+                const badge = document.getElementById('sim-status-badge');
+                badge.textContent = run.status;
+                badge.className = `badge ${run.status}`;
 
-            // Config tags
-            const cfgArea = document.getElementById('config-display');
-            if (run.config) {
-                const c = run.config;
-                cfgArea.innerHTML = `
+                // Config tags
+                const cfgArea = document.getElementById('config-display');
+                if (run.config) {
+                    const c = run.config;
+                    cfgArea.innerHTML = `
                     <span class="config-tag">${c.negotiation_style}</span>
-                    <span class="config-tag">🎯 B: ${c.buyer_strategy}</span>
-                    <span class="config-tag">🎯 S: ${c.seller_strategy}</span>
-                    <span class="config-tag">🌡️ ${c.buyer_temperature}</span>
+                    <span class="config-tag">Buyer Strategy: ${c.buyer_strategy}</span>
+                    <span class="config-tag">Seller Strategy: ${c.seller_strategy}</span>
+                    <span class="config-tag">Temp: ${c.buyer_temperature}</span>
                 `;
-            } else {
-                cfgArea.innerHTML = '';
+                } else {
+                    cfgArea.innerHTML = '';
+                }
+
+                // ─ Metrics ─
+                const maxTurns = 20;
+                document.getElementById('m-turns').textContent = run.turns;
+                document.getElementById('m-turns-sub').textContent = `of ${maxTurns} max`;
+
+                document.getElementById('m-price').textContent = run.final_price ? '$' + run.final_price.toFixed(2) : 'N/A';
+                document.getElementById('m-price-sub').textContent = run.reason || '';
+
+                // Efficiency score: how quickly it resolved (lower turns = higher efficiency)
+                const efficiency = Math.max(0, Math.round((1 - (run.turns / maxTurns)) * 100));
+                document.getElementById('m-efficiency').textContent = efficiency + '%';
+
+                // Loop detection: count repeated prices
+                const loopInfo = detectLoops(run.steps);
+                document.getElementById('m-loop').textContent = loopInfo.count > 0 ? loopInfo.count : 'None';
+                document.getElementById('m-loop-sub').textContent = loopInfo.count > 0 ? 'repeats found' : 'clean run';
+
+                // ─ Price Chart ─
+                renderPriceChart(run.steps);
+
+                // ─ Failure Report ─
+                renderFailureReport(run.failure_report);
+
+                // ─ Telemetry ─
+                renderTelemetry(run.telemetry);
+
+                // ─ Timeline ─
+                renderTimeline(run.steps);
             }
 
-            // ─ Metrics ─
-            const maxTurns = 20;
-            document.getElementById('m-turns').textContent = run.turns;
-            document.getElementById('m-turns-sub').textContent = `of ${maxTurns} max`;
-
-            document.getElementById('m-price').textContent = run.final_price ? '$' + run.final_price.toFixed(2) : 'N/A';
-            document.getElementById('m-price-sub').textContent = run.reason || '';
-
-            // Efficiency score: how quickly it resolved (lower turns = higher efficiency)
-            const efficiency = Math.max(0, Math.round((1 - (run.turns / maxTurns)) * 100));
-            document.getElementById('m-efficiency').textContent = efficiency + '%';
-
-            // Loop detection: count repeated prices
-            const loopInfo = detectLoops(run.steps);
-            document.getElementById('m-loop').textContent = loopInfo.count > 0 ? loopInfo.count : 'None';
-            document.getElementById('m-loop-sub').textContent = loopInfo.count > 0 ? 'repeats found' : 'clean run';
-
-            // ─ Price Chart ─
-            renderPriceChart(run.steps);
-
-            // ─ Failure Report ─
-            renderFailureReport(run.failure_report);
-
-            // ─ Telemetry ─
-            renderTelemetry(run.telemetry);
-
-            // ─ Timeline ─
-            renderTimeline(run.steps);
-        }
-
-        // ─── Loop Detection ───
-        function detectLoops(steps) {
-            if (!steps || steps.length < 3) return { count: 0 };
-            let repeats = 0;
-            const pricesByAgent = {};
-            steps.forEach(step => {
-                const price = step.action?.price;
-                const agent = step.agent;
-                if (price != null) {
-                    if (!pricesByAgent[agent]) pricesByAgent[agent] = [];
-                    const prev = pricesByAgent[agent];
-                    if (prev.length > 0 && prev[prev.length - 1] === price) {
-                        repeats++;
+            // ─── Loop Detection ───
+            function detectLoops(steps) {
+                if (!steps || steps.length < 3) return { count: 0 };
+                let repeats = 0;
+                const pricesByAgent = {};
+                steps.forEach(step => {
+                    const price = step.action?.price;
+                    const agent = step.agent;
+                    if (price != null) {
+                        if (!pricesByAgent[agent]) pricesByAgent[agent] = [];
+                        const prev = pricesByAgent[agent];
+                        if (prev.length > 0 && prev[prev.length - 1] === price) {
+                            repeats++;
+                        }
+                        prev.push(price);
                     }
-                    prev.push(price);
-                }
-            });
-            return { count: repeats };
-        }
+                });
+                return { count: repeats };
+            }
 
-        // ─── Price Chart ───
-        function renderPriceChart(steps) {
-            const ctx = document.getElementById('priceChart').getContext('2d');
-            if (priceChart) priceChart.destroy();
+            // ─── Price Chart ───
+            function renderPriceChart(steps) {
+                const ctx = document.getElementById('priceChart').getContext('2d');
+                if (priceChart) priceChart.destroy();
 
-            if (!steps || steps.length === 0) return;
+                if (!steps || steps.length === 0) return;
 
-            const datasetsMap = {};
-            const labels = [];
-            const agentColors = [
-                '#38bdf8', // Buyer blue
-                '#f472b6', // Seller pink
-                '#10b981', // Emerald
-                '#fbbf24', // Amber
-                '#a78bfa', // Violet
-                '#f87171'  // Red
-            ];
+                const datasetsMap = {};
+                const labels = [];
+                const agentColors = [
+                    '#38bdf8', // Buyer blue
+                    '#f472b6', // Seller pink
+                    '#10b981', // Emerald
+                    '#fbbf24', // Amber
+                    '#a78bfa', // Violet
+                    '#f87171'  // Red
+                ];
 
-            const colorsMap = {};
+                const colorsMap = {};
 
-            steps.forEach((step, i) => {
-                const price = step.action?.price;
-                const agent = step.agent;
+                steps.forEach((step, i) => {
+                    const price = step.action?.price;
+                    const agent = step.agent;
 
-                // Add label for turn if not already there for this turn index
-                const label = `T${step.turn}`;
-                if (!labels.includes(label)) labels.push(label);
-                const turnIdx = labels.indexOf(label);
+                    // Add label for turn if not already there for this turn index
+                    const label = `T${step.turn}`;
+                    if (!labels.includes(label)) labels.push(label);
+                    const turnIdx = labels.indexOf(label);
 
-                if (!datasetsMap[agent]) {
-                    if (!colorsMap[agent]) {
-                        const colorIdx = Object.keys(datasetsMap).length % agentColors.length;
-                        colorsMap[agent] = agentColors[colorIdx];
+                    if (!datasetsMap[agent]) {
+                        if (!colorsMap[agent]) {
+                            const colorIdx = Object.keys(datasetsMap).length % agentColors.length;
+                            colorsMap[agent] = agentColors[colorIdx];
+                        }
+                        datasetsMap[agent] = {
+                            label: agent,
+                            data: new Array(steps.length).fill(null),
+                            borderColor: colorsMap[agent],
+                            backgroundColor: colorsMap[agent] + '1A', // 10% opacity
+                            borderWidth: 2,
+                            tension: 0.3,
+                            pointRadius: 4,
+                            pointBackgroundColor: colorsMap[agent],
+                            fill: false,
+                            spanGaps: true
+                        };
                     }
-                    datasetsMap[agent] = {
-                        label: agent,
-                        data: new Array(steps.length).fill(null),
-                        borderColor: colorsMap[agent],
-                        backgroundColor: colorsMap[agent] + '1A', // 10% opacity
-                        borderWidth: 2,
-                        tension: 0.3,
-                        pointRadius: 4,
-                        pointBackgroundColor: colorsMap[agent],
-                        fill: false,
-                        spanGaps: true
-                    };
-                }
 
-                // Set price at the correct turn index
-                datasetsMap[agent].data[turnIdx] = (price != null) ? price : null;
-            });
+                    // Set price at the correct turn index
+                    datasetsMap[agent].data[turnIdx] = (price != null) ? price : null;
+                });
 
-            // Clean up unneeded nulls at the end of data arrays if labels were shorter
-            Object.values(datasetsMap).forEach(ds => {
-                ds.data = ds.data.slice(0, labels.length);
-            });
+                // Clean up unneeded nulls at the end of data arrays if labels were shorter
+                Object.values(datasetsMap).forEach(ds => {
+                    ds.data = ds.data.slice(0, labels.length);
+                });
 
-            priceChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels,
-                    datasets: Object.values(datasetsMap)
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: {
-                        mode: 'index',
-                        intersect: false,
+                priceChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: Object.values(datasetsMap)
                     },
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                            labels: {
-                                color: '#94a3b8',
-                                font: { family: 'Inter', size: 11 },
-                                usePointStyle: true,
-                                pointStyle: 'circle',
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    color: '#94a3b8',
+                                    font: { family: 'Inter', size: 11 },
+                                    usePointStyle: true,
+                                    pointStyle: 'circle',
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: '#1e293b',
+                                titleColor: '#f1f5f9',
+                                bodyColor: '#94a3b8',
+                                borderColor: '#334155',
+                                borderWidth: 1,
+                                padding: 10,
+                                cornerRadius: 8,
+                                callbacks: {
+                                    label: function (context) {
+                                        if (context.parsed.y !== null) {
+                                            return `${context.dataset.label}: $${context.parsed.y.toFixed(2)}`;
+                                        }
+                                        return '';
+                                    }
+                                }
                             }
                         },
-                        tooltip: {
-                            backgroundColor: '#1e293b',
-                            titleColor: '#f1f5f9',
-                            bodyColor: '#94a3b8',
-                            borderColor: '#334155',
-                            borderWidth: 1,
-                            padding: 10,
-                            cornerRadius: 8,
-                            callbacks: {
-                                label: function (context) {
-                                    if (context.parsed.y !== null) {
-                                        return `${context.dataset.label}: $${context.parsed.y.toFixed(2)}`;
-                                    }
-                                    return '';
+                        scales: {
+                            x: {
+                                grid: { color: 'rgba(255,255,255,0.04)' },
+                                ticks: { color: '#64748b', font: { size: 10 } }
+                            },
+                            y: {
+                                grid: { color: 'rgba(255,255,255,0.04)' },
+                                ticks: {
+                                    color: '#64748b',
+                                    font: { size: 10 },
+                                    callback: v => '$' + v
                                 }
                             }
                         }
-                    },
-                    scales: {
-                        x: {
-                            grid: { color: 'rgba(255,255,255,0.04)' },
-                            ticks: { color: '#64748b', font: { size: 10 } }
-                        },
-                        y: {
-                            grid: { color: 'rgba(255,255,255,0.04)' },
-                            ticks: {
-                                color: '#64748b',
-                                font: { size: 10 },
-                                callback: v => '$' + v
-                            }
-                        }
                     }
-                }
-            });
-        }
-
-        // ─── Decision Timeline ───
-        function renderTimeline(steps) {
-            const container = document.getElementById('timeline-container');
-            container.innerHTML = '';
-
-            if (!steps || steps.length === 0) {
-                container.innerHTML = '<p style="color:var(--text-dim);font-size:0.85rem;">No tracking data available.</p>';
-                return;
+                });
             }
 
-            steps.forEach((step, index) => {
-                const isBuyer = step.agent.toLowerCase().includes('buyer');
-                const isSeller = step.agent.toLowerCase().includes('seller') || step.agent.toLowerCase().includes('vendor');
-                const agentClass = isBuyer ? 'buyer' : isSeller ? 'seller' : 'neutral';
-                const action = step.action?.action || step.action?.type || '?';
-                const price = step.action?.price;
-                const reasoning = step.action?.reasoning || '';
+            // ─── Decision Timeline ───
+            function renderTimeline(steps) {
+                const container = document.getElementById('timeline-container');
+                container.innerHTML = '';
 
-                const stepEl = document.createElement('div');
-                const isAdversarial = step.is_adversarial || step.action?.is_adversarial;
-                stepEl.className = `timeline-step ${agentClass}${isAdversarial ? ' adversarial' : ''}`;
-                stepEl.style.animationDelay = `${index * 0.04}s`;
+                if (!steps || steps.length === 0) {
+                    container.innerHTML = '<p style="color:var(--text-dim);font-size:0.85rem;">No tracking data available.</p>';
+                    return;
+                }
 
-                const priceHtml = (typeof price === 'number')
-                    ? `<span class="action-price">$${price.toFixed(2)}</span>`
-                    : '';
+                steps.forEach((step, index) => {
+                    const isBuyer = step.agent.toLowerCase().includes('buyer');
+                    const isSeller = step.agent.toLowerCase().includes('seller') || step.agent.toLowerCase().includes('vendor');
+                    const agentClass = isBuyer ? 'buyer' : isSeller ? 'seller' : 'neutral';
+                    const action = step.action?.action || step.action?.type || '?';
+                    const price = step.action?.price;
+                    const reasoning = step.action?.reasoning || '';
 
-                const actionClass = (action === 'acceptance' || action === 'accept') ? ' accept' : (action === 'rejection' || action === 'reject') ? ' reject' : '';
+                    const stepEl = document.createElement('div');
+                    const isAdversarial = step.is_adversarial || step.action?.is_adversarial;
+                    stepEl.className = `timeline-step ${agentClass}${isAdversarial ? ' adversarial' : ''}`;
+                    stepEl.style.animationDelay = `${index * 0.04}s`;
 
-                const reasoningHtml = reasoning
-                    ? `<div class="step-reasoning">${reasoning}</div>`
-                    : '';
+                    const priceHtml = (typeof price === 'number')
+                        ? `<span class="action-price">$${price.toFixed(2)}</span>`
+                        : '';
 
-                stepEl.innerHTML = `
+                    const actionClass = (action === 'acceptance' || action === 'accept') ? ' accept' : (action === 'rejection' || action === 'reject') ? ' reject' : '';
+
+                    const reasoningHtml = reasoning
+                        ? `<div class="step-reasoning">${reasoning}</div>`
+                        : '';
+
+                    stepEl.innerHTML = `
                     <div class="step-card">
                         <div class="step-header">
                             <span class="turn-label">T${step.turn}</span>
@@ -1910,28 +2434,28 @@
                         ${reasoningHtml}
                     </div>
                 `;
-                container.appendChild(stepEl);
-            });
-        }
-
-        // ─── Failure Report ───
-        function renderFailureReport(report) {
-            const panel = document.getElementById('failure-panel');
-            const scoreArea = document.getElementById('risk-score-area');
-            const cardsContainer = document.getElementById('failure-cards-container');
-
-            if (!report || !report.failures || report.failures.length === 0) {
-                panel.classList.add('hidden');
-                return;
+                    container.appendChild(stepEl);
+                });
             }
 
-            panel.classList.remove('hidden');
+            // ─── Failure Report ───
+            function renderFailureReport(report) {
+                const panel = document.getElementById('failure-panel');
+                const scoreArea = document.getElementById('risk-score-area');
+                const cardsContainer = document.getElementById('failure-cards-container');
 
-            // Risk gauge
-            const score = report.risk_score || 0;
-            const riskLevel = score >= 50 ? 'high' : score >= 20 ? 'medium' : 'low';
+                if (!report || !report.failures || report.failures.length === 0) {
+                    panel.classList.add('hidden');
+                    return;
+                }
 
-            scoreArea.innerHTML = `
+                panel.classList.remove('hidden');
+
+                // Risk gauge
+                const score = report.risk_score || 0;
+                const riskLevel = score >= 50 ? 'high' : score >= 20 ? 'medium' : 'low';
+
+                scoreArea.innerHTML = `
                 <div class="risk-gauge ${riskLevel}">${score}</div>
                 <div class="risk-summary">
                     <strong>Risk Score: ${score}/100</strong><br>
@@ -1939,51 +2463,50 @@
                 </div>
             `;
 
-            // Failure type icons
-            const typeIcons = {
-                loop_failure: '🔄',
-                deadlock: '🔒',
-                irrational_concession: '⚠️',
-                invalid_action: '❌',
-                protocol_violation: '🚫'
-            };
+                // Failure card metadata
+                const typeLabels = {
+                    loop_failure: 'Repetitive Loop',
+                    deadlock: 'Negotiation Deadlock',
+                    irrational_concession: 'Irrational Concession',
+                    invalid_action: 'Protocol Violation',
+                    protocol_violation: 'Schema Violation'
+                };
 
-            // Cards
-            cardsContainer.innerHTML = '';
-            report.failures.forEach((f, i) => {
-                const card = document.createElement('div');
-                card.className = `failure-card severity-${f.severity}`;
-                card.style.animationDelay = `${i * 0.05}s`;
+                // Cards
+                cardsContainer.innerHTML = '';
+                report.failures.forEach((f, i) => {
+                    const card = document.createElement('div');
+                    card.className = `failure-card severity-${f.severity}`;
+                    card.style.animationDelay = `${i * 0.05}s`;
 
-                card.innerHTML = `
-                    <span class="failure-icon">${typeIcons[f.type] || '⚠️'}</span>
+                    card.innerHTML = `
                     <div class="failure-details">
                         <div class="failure-meta">
-                            <span class="failure-type-tag ${f.severity}">${f.type.replace(/_/g, ' ')}</span>
+                            <span class="failure-type-tag ${f.severity}">${typeLabels[f.type] || f.type}</span>
                             <span class="failure-turn">Turn ${f.turn} · ${f.agent}</span>
                         </div>
                         <div class="failure-desc">${f.description}</div>
                     </div>
                 `;
-                cardsContainer.appendChild(card);
-            });
-        }
-
-        // ─── Telemetry ───
-        function renderTelemetry(tel) {
-            const panel = document.getElementById('telemetry-panel');
-            const metricsEl = document.getElementById('tel-metrics');
-            const barsEl = document.getElementById('tel-latency-bars');
-
-            if (!tel || !tel.decisions || tel.decisions.length === 0) {
-                panel.classList.add('hidden');
-                return;
+                    cardsContainer.appendChild(card);
+                });
             }
 
-            panel.classList.remove('hidden');
+            // ─── Telemetry ───
+            function renderTelemetry(tel) {
+                const panel = document.getElementById('telemetry-panel');
+                const metricsEl = document.getElementById('tel-metrics');
+                const barsEl = document.getElementById('tel-latency-bars');
 
-            // Metrics grid
-            metricsEl.innerHTML = `
+                if (!tel || !tel.decisions || tel.decisions.length === 0) {
+                    panel.classList.add('hidden');
+                    return;
+                }
+
+                panel.classList.remove('hidden');
+
+                // Metrics grid
+                metricsEl.innerHTML = `
                 <div class="tel-metric accent">
                     <div class="tel-value">${tel.avg_decision_latency_ms}ms</div>
                     <div class="tel-label">Avg Latency</div>
@@ -2002,83 +2525,83 @@
                 </div>
             `;
 
-            // Latency bars per decision
-            const maxLatency = Math.max(...tel.decisions.map(d => d.latency_ms), 1);
-            barsEl.innerHTML = '';
-            tel.decisions.forEach((d, i) => {
-                const pct = Math.min((d.latency_ms / maxLatency) * 100, 100);
-                const color = d.error
-                    ? 'var(--danger)'
-                    : d.latency_ms > maxLatency * 0.8
-                        ? 'var(--warning)'
-                        : 'var(--accent)';
+                // Latency bars per decision
+                const maxLatency = Math.max(...tel.decisions.map(d => d.latency_ms), 1);
+                barsEl.innerHTML = '';
+                tel.decisions.forEach((d, i) => {
+                    const pct = Math.min((d.latency_ms / maxLatency) * 100, 100);
+                    const color = d.error
+                        ? 'var(--danger)'
+                        : d.latency_ms > maxLatency * 0.8
+                            ? 'var(--warning)'
+                            : 'var(--accent)';
 
-                const row = document.createElement('div');
-                row.className = 'latency-bar-row';
-                row.style.animationDelay = `${i * 0.03}s`;
-                row.innerHTML = `
-                    <div class="latency-bar-label">${d.agent.split(' ')[0]}${d.fallback ? ' ⚡' : ''}</div>
+                    const row = document.createElement('div');
+                    row.className = 'latency-bar-row';
+                    row.style.animationDelay = `${i * 0.03}s`;
+                    row.innerHTML = `
+                    <div class="latency-bar-label">${d.agent.split(' ')[0]}${d.fallback ? ' (Fallback)' : ''}</div>
                     <div class="latency-bar-track">
                         <div class="latency-bar-fill" style="width:${pct}%;background:${color}"></div>
                     </div>
                     <div class="latency-bar-value">${d.latency_ms}ms${d.tokens ? ' · ' + d.tokens + 't' : ''}</div>
                 `;
-                barsEl.appendChild(row);
-            });
-        }
-
-        // ─── Dataset Export ───
-        async function exportDataset(format) {
-            const statusEl = document.getElementById('export-status');
-            statusEl.textContent = '⏳ Exporting...';
-
-            try {
-                if (format === 'csv') {
-                    // CSV: trigger file download
-                    const a = document.createElement('a');
-                    a.href = `${API_BASE}/dataset/export?format=csv`;
-                    a.download = 'agent_sandbox_dataset.csv';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    statusEl.textContent = '✅ CSV downloaded!';
-                } else {
-                    // JSON: fetch and trigger download
-                    const res = await fetch(`${API_BASE}/dataset/export?format=json`);
-                    const json = await res.json();
-                    const blob = new Blob([JSON.stringify(json.data, null, 2)], { type: 'application/json' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'agent_sandbox_dataset.json';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                    statusEl.textContent = `✅ ${json.total_rows} rows exported!`;
-                }
-            } catch (e) {
-                statusEl.textContent = '❌ No data yet — run a simulation first!';
+                    barsEl.appendChild(row);
+                });
             }
-            setTimeout(() => { statusEl.textContent = ''; }, 3000);
-        }
 
-        // ─── Agent Discovery ───
-        async function loadAgentCards() {
-            const area = document.getElementById('agent-discovery-area');
-            const compatArea = document.getElementById('compat-discovery-area');
+            // ─── Dataset Export ───
+            async function exportDataset(format) {
+                const statusEl = document.getElementById('export-status');
+                statusEl.textContent = '⏳ Exporting...';
 
-            try {
-                const res = await fetch(`${API_BASE}/agents/cards`);
-                const data = await res.json();
+                try {
+                    if (format === 'csv') {
+                        // CSV: trigger file download
+                        const a = document.createElement('a');
+                        a.href = `${API_BASE}/dataset/export?format=csv`;
+                        a.download = 'agent_sandbox_dataset.csv';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        statusEl.textContent = '✅ CSV downloaded!';
+                    } else {
+                        // JSON: fetch and trigger download
+                        const res = await fetch(`${API_BASE}/dataset/export?format=json`);
+                        const json = await res.json();
+                        const blob = new Blob([JSON.stringify(json.data, null, 2)], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'agent_sandbox_dataset.json';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        statusEl.textContent = `✅ ${json.total_rows} rows exported!`;
+                    }
+                } catch (e) {
+                    statusEl.textContent = '❌ No data yet — run a simulation first!';
+                }
+                setTimeout(() => { statusEl.textContent = ''; }, 3000);
+            }
 
-                if (data.status === 'success') {
-                    area.innerHTML = '';
-                    data.agents.forEach(card => {
-                        const el = document.createElement('div');
-                        el.className = 'agent-card';
-                        el.innerHTML = `
-                            <div class="role-badge ${card.role}">${card.role}</div>
+            // ─── Agent Discovery ───
+            async function loadAgentCards() {
+                const area = document.getElementById('agent-discovery-area');
+                const compatArea = document.getElementById('compat-discovery-area');
+
+                try {
+                    const res = await fetch(`${API_BASE}/agents/cards`);
+                    const data = await res.json();
+
+                    if (data.status === 'success') {
+                        area.innerHTML = '';
+                        data.agents.forEach(card => {
+                            const el = document.createElement('div');
+                            el.className = 'agent-card';
+                            el.innerHTML = `
+                            <div class="role-badge ${card.role}">${card.role.toUpperCase()}</div>
                             <h4>${card.agent_name} <span style="font-size:0.7rem;color:var(--text-dim)">v${card.version}</span></h4>
                             <div class="desc">${card.description}</div>
                             <div class="tags">
@@ -2086,13 +2609,13 @@
                                 <span class="tag" style="background:var(--primary-dim);color:var(--primary)">${card.framework}</span>
                             </div>
                         `;
-                        area.appendChild(el);
-                    });
+                            area.appendChild(el);
+                        });
 
-                    if (data.compatibility) {
-                        const c = data.compatibility;
-                        if (c.compatible) {
-                            compatArea.innerHTML = `
+                        if (data.compatibility) {
+                            const c = data.compatibility;
+                            if (c.compatible) {
+                                compatArea.innerHTML = `
                                 <div class="compatibility-banner">
                                     <span>✅</span>
                                     <div>
@@ -2101,8 +2624,8 @@
                                     </div>
                                 </div>
                             `;
-                        } else {
-                            compatArea.innerHTML = `
+                            } else {
+                                compatArea.innerHTML = `
                                 <div class="compatibility-banner compatibility-issue">
                                     <span>⚠️</span>
                                     <div>
@@ -2111,14 +2634,14 @@
                                     </div>
                                 </div>
                             `;
+                            }
                         }
                     }
+                } catch (e) {
+                    area.innerHTML = '<div style="color:var(--danger)">Failed to load agent cards.</div>';
                 }
-            } catch (e) {
-                area.innerHTML = '<div style="color:var(--danger)">Failed to load agent cards.</div>';
             }
-        }
-    </script>
+        </script>
 </body>
 
 </html>

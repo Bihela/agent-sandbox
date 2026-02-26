@@ -33,7 +33,12 @@ The Agent Sandbox is a multi-agent system backend built using FastAPI.
   - `GET /simulation/replay`: Returns all historical runs loaded into memory with their full sequential play-by-play steps.
   - `GET /simulation/{id}`: Retrieves the full history and details of a specific simulation run.
 - **Replay System**: Built-in tracking inside `world/world_manager.py` that records the precise agent actions, capturing the actor, turn number, and raw action state in a linear `steps` array, which is then exposed in the API outputs.
-- **Browser UI**: A responsive, vanilla HTML/JS/CSS frontend located in `frontend/index.html`. It is statically mounted and served via FastAPI at the `/play` endpoint. Features include: a simulation control panel with buyer/seller parameters, a past-run history sidebar, a **Chart.js price-over-time graph** (buyer vs seller price trajectories), a **metrics panel** (total turns, final price, efficiency score, loop detection), **session-level aggregate analytics** (success rate, total runs, average turns, deadlocks), and a **decision timeline** that displays each agent's action, price, and AI reasoning step-by-step. Uses a premium dark glassmorphism design with micro-animations.
+- **Browser UI**: A responsive, vanilla HTML/JS/CSS frontend located in `frontend/index.html`. It is statically mounted and served via FastAPI at the `/play` endpoint. Features include:
+  - **Global Command Header**: Centralized navigation for Ecoystem Discovery, Performance Arena, and Intelligence Hub.
+  - **Performance Analytics**: Chart.js price-over-time graphs, metrics panels (efficiency scores, loop detection).
+  - **Decision Timeline**: Sequential display of each agent's action, price, and AI reasoning.
+  - **System Robustness Overlay**: Specialized modal for adversarial settings (Attack Probability), keeping the main controls focused.
+  - **Design Style**: Premium "Midnight Slate" glassmorphism with emoji-free professional aesthetics and micro-animations.
 - **Agent Implementations**: Multiple types of agents exist in `agents/`, all inheriting from `BaseAgent`.
   - **Rule-based Agents**: `BuyerAgent` and `SellerAgent` capable of deterministic simple negotiation logic (offer, counter, accept).
   - **LLM-based Agents**: `LLMAgent` located in `agents/llm_agent.py` dynamically builds prompt contexts (price, budget constraints), constructs an action history, and calls the local Ollama inference engine (currently configured to use the `mistral` model). Returns structured ACP-compliant JSON with `sender`, `receiver`, `type`, `price`, and `reasoning` fields. Includes a normalization layer to map legacy terms (e.g., "offer") to the standard protocol.
@@ -45,10 +50,18 @@ The Agent Sandbox is a multi-agent system backend built using FastAPI.
 - **Agent Strategy System**: Pluggable strategy modules in `agents/strategies/` with `BaseStrategy` abstract class, three implementations (aggressive 5% concession, balanced 10%, conservative 20%), and a registry with aliases. Strategies provide both LLM system prompts and programmatic fallback logic, replacing the previous hardcoded fallback. Enables strategy experiments from the UI.
 - **Dataset Export System**: `metrics/dataset_exporter.py` flattens simulation replays into tabular rows (one per decision step) with 20 columns spanning simulation metadata, config, failure analysis, telemetry, and per-step actions. Exposed via `GET /dataset/export?format=json|csv`. Frontend sidebar has JSON/CSV download buttons. Turns the sandbox into a negotiation dataset generator.
 - **Agent Cards & Discovery System**: Machine-readable agent descriptors in `agents/cards/` (JSON). `agents/card_loader.py` provides semantic discovery and cross-agent compatibility checking (protocol, I/O schema, capabilities). Discovery area in the frontend automatically surface available agents and simulation-readiness reports. This aligns with emerging industry standards for agentic ecosystems.
-- **Tournament Engine & Global Leaderboard**: Automated benchmarking system in `tournaments/`. 
-  - `TournamentRunner`: Orchestrates round-robin simulations between multiple strategies (Aggressive, Balanced, Conservative, Adaptive) and models. 
-  - `Leaderboard`: Persistent JSON-based storage (`data/leaderboard.json`) calculating win rates, average turns, and aggregate performance. 
-  - UI Integration: Sidebar controls to trigger benchmarking runs and a dedicated "🏆 Global Leaderboard" panel to visualize strategy effectiveness over time.
+- **Tournament Engine & Intelligence Hub**: Automated benchmarking system in `tournaments/`. 
+  - `TournamentRunner`: Orchestrates round-robin simulations between multiple strategies and models. 
+  - `Leaderboard`: Persistent JSON-based storage (`data/leaderboard.json`) calculating win rates and aggregate performance. 
+  - **Intelligence Hub View**: A dedicated, full-screen dashboard in the UI for visualizing global strategy effectiveness, model benchmarks, and detailed ranking metrics.
 - **Red Team Adversarial Engine**: A specialized `RedTeamAgent` that acts as a "Man-in-the-Middle" during simulations. It disrupts negotiations by injecting wrong numbers, fake constraints, or protocol violations based on a configurable attack probability. This allows stress-testing of the `FailureDetector` and observation of how strategies handle deception.
 - **Experiment Research Engine**: A high-level orchestrator (`ExperimentRunner`) that performs complex parameter sweeps (Grid Search) across multiple variables (temperature, strategies, models). Results are aggregated into structured JSON datasets for scientific analysis of model convergence and behavior.
+- **Simulation Scheduler**: [NEW] A persistent queue system in `simulation_queue/` that enables long-running background experiments. 
+  - `SimulationJob`: Database model for tracking job state (pending, running, completed, failed).
+  - `SimulationWorker`: Background thread that processes jobs from the queue sequentially.
+  - Endpoints: `POST /simulation/schedule`, `GET /queue/status`, `GET /queue/recent`.
+- **Performance Arena**: A competitive benchmarking mode with a "Versus" clashing layout.
+  - **Dual-Model Benchmarking**: Supports **Model A vs Model B** clashing, allowing for direct cross-model negotiation capability analysis.
+  - **Per-Fighter Config**: Isolated strategy, risk, and model configuration panels for each challenger.
+  - **Competitive Metrics**: Tracks Strategy-vs-Strategy and Model-vs-Model win rates via the Intelligence Hub.
 

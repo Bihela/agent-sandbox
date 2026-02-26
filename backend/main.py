@@ -10,12 +10,31 @@ from scenarios.multi_vendor_negotiation import MultiVendorNegotiationScenario
 from tournaments.tournament_runner import TournamentRunner
 from tournaments.leaderboard import Leaderboard
 from experiments.experiment_runner import ExperimentRunner
+from telemetry_module.telemetry import tracer, collector
+from simulation_queue.queue_manager import QueueManager
+from simulation_queue.worker import SimulationWorker
+import logging
+import threading
 
 app = FastAPI()
 world_manager = WorldManager()
 tournament_runner = TournamentRunner(world_manager)
 leaderboard = Leaderboard()
 experiment_runner = ExperimentRunner(world_manager)
+
+worker = None
+
+@app.on_event("startup")
+def startup_event():
+    global worker
+    worker = SimulationWorker(world_manager)
+    worker.start()
+    print("DEBUG: Background simulation worker started.")
+
+@app.on_event("shutdown")
+def shutdown_event():
+    if worker:
+        worker.stop()
 
 
 class AgentConfigRequest(BaseModel):
@@ -45,6 +64,18 @@ class SimulationRequest(BaseModel):
     agents_configs: Optional[List[AgentConfigRequest]] = None
     red_team_config: Optional[RedTeamConfigRequest] = None
 
+class ScheduleRequest(BaseModel):
+    scenario_type: str = "price_negotiation"
+    count: int = 1
+    priority: int = 0
+    config: SimulationRequest
+
+class BattleRequest(BaseModel):
+    buyer_config: AgentConfigRequest
+    seller_config: AgentConfigRequest
+    model_name: str = "mistral"
+    buyer_max: float = 150.0
+    seller_min: float = 100.0
 
 
 @app.get("/")
@@ -183,6 +214,39 @@ def start_simulation(req: SimulationRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/simulation/schedule")
+def schedule_simulation(req: ScheduleRequest):
+    """Enqueues one or many simulations for background execution."""
+    try:
+        # Convert Pydantic request to dict for storage
+        config_dict = req.config.dict()
+        jobs = QueueManager.schedule_simulations(
+            scenario_type=req.scenario_type,
+            config=config_dict,
+            count=req.count,
+            priority=req.priority
+        )
+        return {
+            "status": "success", 
+            "message": f"Enqueued {len(jobs)} simulations.",
+            "job_ids": [j.id for j in jobs]
+        }
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/queue/status")
+def get_queue_status():
+    """Returns summarized stats of the simulation queue."""
+    return {"status": "success", "data": QueueManager.get_queue_stats()}
+
+@app.get("/queue/recent")
+def get_recent_jobs(limit: int = 50):
+    """Returns detailed status of recent jobs."""
+    return {"status": "success", "data": QueueManager.get_recent_jobs(limit)}
+
+
 class BatchSimulationRequest(SimulationRequest):
     runs: int = 100
     
@@ -272,5 +336,53 @@ def get_agent_cards():
 @app.get("/tournament/leaderboard")
 def get_leaderboard():
     return {"status": "success", "data": leaderboard.get_rankings()}
+
+@app.post("/tournament/battle")
+def start_arena_battle(req: BattleRequest):
+    """Runs a single 1v1 battle between specific configs and updates the leaderboard."""
+    try:
+        # Create Scenario
+        scenario = PriceNegotiationScenario(
+            buyer_max=req.buyer_max,
+            seller_min=req.seller_min,
+            max_turns=20
+        )
+        
+        # Create Config
+        config = SimulationConfig(
+            buyer_max=req.buyer_max,
+            seller_min=req.seller_min,
+            max_turns=20,
+            negotiation_style=NegotiationStyle.FORMAL,
+            buyer_config=AgentConfig(
+                strategy=StrategyType(req.buyer_config.strategy or "balanced"),
+                risk_level=RiskLevel(req.buyer_config.risk_level or "medium"),
+                temperature=req.buyer_config.temperature
+            ),
+            seller_config=AgentConfig(
+                strategy=StrategyType(req.seller_config.strategy or "balanced"),
+                risk_level=RiskLevel(req.seller_config.risk_level or "medium"),
+                temperature=req.seller_config.temperature
+            ),
+            model_name=req.model_name,
+            temperature=req.buyer_config.temperature # Defaulting to buyer's if needed, or use model global
+        )
+        
+        # Run Simulation
+        result = world_manager.start_simulation(scenario, config)
+        
+        # Record in Leaderboard
+        leaderboard.record_simulation(
+            req.buyer_config.strategy, 
+            req.seller_config.strategy, 
+            req.model_name, 
+            result
+        )
+        
+        return {"status": "success", "data": result}
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 app.mount("/play", StaticFiles(directory="frontend", html=True), name="frontend")

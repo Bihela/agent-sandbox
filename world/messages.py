@@ -9,6 +9,12 @@ class MessageType(str, Enum):
     REJECTION = "rejection"
     INFORMATION = "information"
     CHALLENGE = "challenge"
+    
+    # Adversarial / Violation Types (for Red Team testing)
+    REJECT_ALL = "reject_all"
+    MALFORMED_JSON = "malformed_json"
+    WAIT_FOREVER = "wait_forever"
+    INVALID_ACP_TYPE = "invalid_acp_type"
 
     # Legacy mappings (for backward compatibility if needed temporarily)
     OFFER = "proposal"

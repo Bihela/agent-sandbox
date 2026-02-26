@@ -17,9 +17,13 @@ class Leaderboard:
                 with open(LEADERBOARD_FILE, "r", encoding="utf-8") as f:
                     self.stats = json.load(f)
             except:
-                self.stats = {"strategies": {}, "models": {}, "last_updated": None}
+                self.stats = {"strategies": {}, "models": {}, "h2h_strategies": {}, "h2h_models": {}, "last_updated": None}
         else:
-            self.stats = {"strategies": {}, "models": {}, "last_updated": None}
+            self.stats = {"strategies": {}, "models": {}, "h2h_strategies": {}, "h2h_models": {}, "last_updated": None}
+
+        # Initialize missing fields for backward compatibility
+        if "h2h_strategies" not in self.stats: self.stats["h2h_strategies"] = {}
+        if "h2h_models" not in self.stats: self.stats["h2h_models"] = {}
 
     def _save(self):
         self.stats["last_updated"] = datetime.now().isoformat()
@@ -32,11 +36,11 @@ class Leaderboard:
         turns = result.get("turns", 0)
         final_price = result.get("final_price")
 
-        # Update strategy stats
+        # 1. Update general strategy stats
         for strat in [buyer_strategy, seller_strategy]:
             if strat not in self.stats["strategies"]:
                 self.stats["strategies"][strat] = {
-                    "runs": 0, "agreements": 0, "total_turns": 0, "concessions": 0
+                    "runs": 0, "agreements": 0, "total_turns": 0
                 }
             s_obj = self.stats["strategies"][strat]
             s_obj["runs"] += 1
@@ -44,7 +48,7 @@ class Leaderboard:
             if status == "agreement":
                 s_obj["agreements"] += 1
 
-        # Update model stats
+        # 2. Update model stats
         if model not in self.stats["models"]:
             self.stats["models"][model] = {"runs": 0, "agreements": 0, "avg_latency_ms": 0}
         
@@ -56,6 +60,14 @@ class Leaderboard:
         latency = result.get("telemetry", {}).get("avg_decision_latency_ms", 0)
         if latency:
             m_obj["avg_latency_ms"] = (m_obj["avg_latency_ms"] * (m_obj["runs"]-1) + latency) / m_obj["runs"]
+
+        # 3. Update H2H Strategy Stats (Buyer vs Seller)
+        h2h_strat_key = f"{buyer_strategy}_vs_{seller_strategy}"
+        if h2h_strat_key not in self.stats["h2h_strategies"]:
+            self.stats["h2h_strategies"][h2h_strat_key] = {"runs": 0, "agreements": 0}
+        self.stats["h2h_strategies"][h2h_strat_key]["runs"] += 1
+        if status == "agreement":
+            self.stats["h2h_strategies"][h2h_strat_key]["agreements"] += 1
 
         self._save()
 
@@ -73,9 +85,21 @@ class Leaderboard:
         
         # Sort by win rate then runs
         strategy_list.sort(key=lambda x: (x["win_rate"], x["total_runs"]), reverse=True)
+
+        model_list = []
+        for name, data in self.stats.get("models", {}).items():
+            runs = data["runs"]
+            model_list.append({
+                "name": name,
+                "win_rate": round((data["agreements"] / runs * 100), 1) if runs > 0 else 0,
+                "avg_latency": round(data.get("avg_latency_ms", 0), 1),
+                "total_runs": runs
+            })
+        model_list.sort(key=lambda x: x["win_rate"], reverse=True)
         
         return {
             "strategies": strategy_list,
-            "models": self.stats["models"],
+            "models": model_list,
+            "h2h_strategies": self.stats.get("h2h_strategies", {}),
             "last_updated": self.stats["last_updated"]
         }

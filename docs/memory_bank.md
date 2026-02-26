@@ -107,4 +107,32 @@ This document records decisions made during development, specifically logging ap
 - **Reasoning (Why rejected)**: Initially considered hardcoding a "Vendor C", but rejected it in favor of a `List[Agent]` architecture to allow for theoretically infinite participant pools.
 - **Impact**: The sandbox is now a "Multiversal" simulator. We successfully verified "Price War" behaviors where multiple LLM vendors undercut each other to win a buyer's proposal.
 
+### 🟢 [Persistent Simulation Scheduler — Background Execution]
+- **Date**: 2026-02-26
+- **Context**: Experiments were previously manual or required the browser to stay open. High-throughput research requires the ability to queue thousands of runs for overnight execution.
+- **Decision**: Implemented a SQLite-backed persistent queue and a background daemon worker. Sequential execution was chosen over parallel to maintain stability on single-GPU/Ollama environments.
+- **Impact**: Enables "Flight-Hours" generation. A researcher can now schedule 10,000 simulations via API and retrieve results later, effectively automating the data collection phase of LLM research.
+
+### 🟢 [Agent Arena — Competitive Mode]
+- **Date**: 2026-02-26
+- **Context**: To increase engagement and benchmarking value, a head-to-head "Arena" mode was implemented.
+- **Decision**: Added granular Head-to-Head (H2H) tracking for both models and strategies. Built a dedicated Arena UI section with fighter-card selection.
+- **Impact**: Transforms the sandbox from a tool into a benchmark ecosystem, attracting users who want to compare LLM negotiation capabilities.
+
+### 🟢 [Global Header Navigation & Layout Refinement]
+- **Date**: 2026-02-26
+- **Context**: The sidebar was becoming extremely cluttered with navigation, parameters, history, and rankings, leading to a poor user experience.
+- **Decision**: Transitioned to a **Global Command Header** for primary navigation (Discovery, Arena, Hub). Moved adversarial settings to a **System Robustness Overlay**. Relocated rankings to a dedicated full-screen **Intelligence Hub**.
+- **Reasoning (Why rejected)**: Sidebar-only navigation was rejected because it didn't scale with the new analytical depth of the sandbox. Keeping rankings in the sidebar made the data feel "weird" and inaccessible.
+- **Impact**: Cleaned up the workspace to focus on simulation control and history, while making deep analytics (Hub) and advanced config (Overlay) easily accessible but non-intrusive.
+
+---
+
+### 🟢 [Dual-Model Benchmarking & Arena Interactivity]
+- **Date**: 2026-02-26
+- **Context**: The Performance Arena only supported comparing strategies on a single model. Users needed to compare capabilities between different foundation models (e.g., Mistral vs Llama 3).
+- **Decision**: Implemented **Dual-Model** selection for the Arena, allowing for direct head-to-head model clashing. Replaced hardcoded placeholders with dynamic model population from the Ollama backend. Added `pointer-events: none` to decorative overlays that were blocking user clicks.
+- **Reasoning (Why rejected)**: Single-model benchmarking was rejected because it limited the scope of negotiation research. Custom dropdown components were rejected in favor of native selectors to ensure 100% click reliability.
+- **Impact**: The Arena is now a true model benchmarking tool, enabling complex comparative analysis of AI negotiation styles across different foundation architectures.
+
 *(No more entries. Add entries here when evaluating features, dependencies, or architectural choices.)*
