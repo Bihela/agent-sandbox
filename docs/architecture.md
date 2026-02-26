@@ -1,0 +1,41 @@
+# Project Architecture
+
+## Overview
+The Agent Sandbox is a multi-agent system backend built using FastAPI.
+
+## Tech Stack
+- **Backend framework**: FastAPI
+- **Server ASGI**: Uvicorn
+- **Data validation**: Pydantic
+- **Database ORM**: SQLAlchemy (setup pending)
+
+## Modular Structure
+- `backend/`: FastApi backend core application logic, settings, and main entries.
+- `agents/`: Agent implementations and behaviors.
+- `world/`: Environment and world state definitions for the agents.
+- `scenarios/`: Specific simulation scenarios and workflows.
+- `metrics/`: Analytics and performance tracking of agent outcomes.
+- `frontend/`: UI components (if applicable in the future).
+- `docs/`: Project documentation, architecture, and memory bank.
+
+## Features
+- **Core API Server**: A basic FastAPI server running on `backend/main.py` with app configurations handled via Pydantic in `backend/config.py`. 
+- **World Manager Engine**: The core simulation engine defined in `world/world_manager.py` that handles starting simulations, creating agents, and managing the core negotiation loop between Agent A, Agent B, and the Mediator based on a provided scenario.
+- **Negotiation Protocol**: A simple rule-based message format defined in `world/messages.py` using Pydantic, supporting `offer`, `counter_offer`, `accept`, and `reject` types to structure interactions.
+- **Mediator Engine**: Enforces simulation logic in `world/mediator.py`. Capable of halting the loop if agents exceed the 20-turn maximum, produce invalid messages, or get mathematically stuck in repeating loops.
+- **Metrics Storage**: SQLAlchemy ORM for storing simulation results in a local SQLite database (`sandbox_metrics.db`), defined in `metrics/storage.py`. Stores simulation ID, agent names, outcome status, turn count, and final agreement price to build a historical dataset.
+- **Scenario Engine**: A flexible framework defined in `scenarios/base_scenario.py` allowing extensible simulation types.
+  - `PriceNegotiationScenario`: Implements the base rules for a 1-on-1 negotiation, overriding agent parameters and initial state logic.
+- **Simulation API**: Exposes four key endpoints in `backend/main.py` via FastAPI to interact with the engine.
+  - `POST /simulation/start`: Kicks off a new specified negotiation scenario (e.g., `scenario_type="price_negotiation"`) returning live results.
+  - `POST /simulation/batch`: Runs a specified scenario back-to-back `N` times (e.g., `runs=100`) and returns aggregated analytics (success rate, deadlocks, average turns, average price).
+  - `GET /simulation/replay`: Returns all historical runs loaded into memory with their full sequential play-by-play steps.
+  - `GET /simulation/{id}`: Retrieves the full history and details of a specific simulation run.
+- **Replay System**: Built-in tracking inside `world/world_manager.py` that records the precise agent actions, capturing the actor, turn number, and raw action state in a linear `steps` array, which is then exposed in the API outputs.
+- **Browser UI**: A responsive, vanilla HTML/JS/CSS frontend located in `frontend/index.html`. It is statically mounted and served via FastAPI at the `/play` endpoint, featuring dynamic simulation controls, a split-pane history view, and a play-by-play timeline visualizer.
+- **Agent Implementations**: Multiple types of agents exist in `agents/`, all inheriting from `BaseAgent`.
+  - **Rule-based Agents**: `BuyerAgent` and `SellerAgent` capable of deterministic simple negotiation logic (offer, counter, accept).
+  - **LLM-based Agents**: `LLMAgent` located in `agents/llm_agent.py` dynamically builds prompt contexts (price, budget constraints), constructs an action history, and calls the Hugging Face Serverless Inference API (currently configured to `mistralai/Mistral-7B-Instruct-v0.2`). Enforces strict JSON return parsers.
+  - **Runtime Execution**: The `world_manager.py` defaults to running `LLMBuyerAgent` and `LLMSellerAgent` to demonstrate the active AI capabilities.
+- **Mediator Engine**: Enforces simulation logic in `world/mediator.py`. Crucially, this remains **strictly rule-based**. Even when LLMs propose actions, the Mediator validates formats, halts infinite loops, and acts as the unbribable referee before the World Manager executes state changes.
+

@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Sandbox UI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --accent: #10b981;
+            --danger: #ef4444;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Layout */
+        #sidebar {
+            width: 320px;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        #main {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            background: radial-gradient(circle at top right, #1e293b, #0f172a);
+        }
+
+        h1,
+        h2,
+        h3 {
+            margin: 0;
+            font-weight: 600;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+
+        /* Controls */
+        .control-group {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .input-row input {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            width: 100%;
+            outline: none;
+            transition: border 0.2s;
+        }
+
+        .input-row input:focus {
+            border-color: var(--primary);
+        }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        button:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        button.secondary {
+            background: transparent;
+            border: 1px solid var(--border);
+            margin-top: 10px;
+        }
+
+        button.secondary:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* History List */
+        .history-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .history-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--primary);
+        }
+
+        .history-item .id {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .history-item .meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+        }
+
+        .status {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status.agreement {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--accent);
+        }
+
+        .status.timeout {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        /* Main View */
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .summary-card {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .summary-card span {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .summary-card strong {
+            font-size: 1.5rem;
+            display: block;
+            margin-top: 5px;
+        }
+
+        /* Timeline */
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+            margin-top: 20px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 7px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--border);
+        }
+
+        .timeline-step {
+            position: relative;
+            margin-bottom: 20px;
+            animation: slideIn 0.3s ease-out forwards;
+            opacity: 0;
+        }
+
+        .timeline-step::before {
+            content: '';
+            position: absolute;
+            left: -28px;
+            top: 5px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--primary);
+            border: 2px solid var(--bg);
+        }
+
+        .timeline-step .turn {
+            font-size: 0.75rem;
+            color: var(--primary);
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .timeline-step .content {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 5px;
+        }
+
+        .actor {
+            font-weight: bold;
+            color: #cbd5e1;
+        }
+
+        .action-tag {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            margin-left: 8px;
+            color: #93c5fd;
+        }
+
+        .action-price {
+            color: var(--accent);
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Utilities */
+        .hidden {
+            display: none !important;
+        }
+
+        .loading {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="sidebar">
+        <h1>Agent Sandbox</h1>
+
+        <div class="control-group">
+            <h3>New Simulation</h3>
+            <div class="input-row" style="margin-top:10px;">
+                <input type="number" id="buyer-max" placeholder="Buyer Max (e.g. 150)" value="150">
+                <input type="number" id="seller-min" placeholder="Seller Min (e.g. 100)" value="100">
+            </div>
+            <button onclick="startSimulation()">Start Run</button>
+            <button class="secondary" onclick="loadHistory()">Refresh History</button>
+        </div>
+
+        <div id="history-container">
+            <!-- Items injected by JS -->
+            <div style="color: var(--text-muted); font-size: 0.85rem; text-align: center;">Loading history...</div>
+        </div>
+    </div>
+
+    <div id="main">
+        <div id="welcome-state" class="glass-panel" style="text-align: center; margin: auto;">
+            <h2 style="font-size: 2rem; margin-bottom: 10px;">Select or Start a Simulation</h2>
+            <p style="color: var(--text-muted);">Watch autonomous agents negotiate in real-time.</p>
+        </div>
+
+        <div id="simulation-view" class="hidden">
+            <div class="glass-panel mb-20">
+                <h2 style="margin-bottom:20px; display:flex; justify-content: space-between; align-items: center;">
+                    Simulation Results
+                    <span id="sim-status-badge" class="status"></span>
+                </h2>
+
+                <div class="summary-grid">
+                    <div class="summary-card"><span>Total Turns</span><strong id="sim-turns">-</strong></div>
+                    <div class="summary-card"><span>Final Price</span><strong id="sim-price">-</strong></div>
+                    <div class="summary-card"><span>Reason</span><strong id="sim-reason"
+                            style="font-size:1rem; color:var(--text-muted);">-</strong></div>
+                </div>
+
+                <h3>Replay Timeline</h3>
+                <div id="timeline-container" class="timeline">
+                    <!-- Steps injected by JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadHistory();
+        });
+
+        async function loadHistory() {
+            const container = document.getElementById('history-container');
+            container.innerHTML = '<div class="loading" style="text-align:center;">Fetching...</div>';
+
+            try {
+                const res = await fetch(`${API_BASE}/simulation/replay`);
+                const json = await res.json();
+                renderHistory(json.data.reverse()); // Show newest first
+            } catch (e) {
+                container.innerHTML = '<div style="color:var(--danger)">Failed to load history</div>';
+            }
+        }
+
+        function renderHistory(runs) {
+            const container = document.getElementById('history-container');
+            if (!runs || runs.length === 0) {
+                container.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; text-align: center;">No simulations run yet.</div>';
+                return;
+            }
+
+            container.innerHTML = '';
+            runs.forEach(run => {
+                const el = document.createElement('div');
+                el.className = 'history-item';
+                el.onclick = () => showSimulation(run);
+
+                const shortId = run.simulation_id.split('-')[0];
+                const priceStr = run.final_price ? `Price: $${run.final_price.toFixed(2)}` : 'No Agreement';
+
+                el.innerHTML = `
+                    <div class="id">ID: ${shortId}...</div>
+                    <div class="meta">
+                        <span class="status ${run.status}">${run.status}</span>
+                        <span>${run.turns} turns</span>
+                    </div>
+                `;
+                container.appendChild(el);
+            });
+        }
+
+        async function startSimulation() {
+            const bMax = parseFloat(document.getElementById('buyer-max').value) || 150;
+            const sMin = parseFloat(document.getElementById('seller-min').value) || 100;
+
+            try {
+                const res = await fetch(`${API_BASE}/simulation/start`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ buyer_max: bMax, seller_min: sMin })
+                });
+                const json = await res.json();
+                if (json.status === "success") {
+                    showSimulation(json.data);
+                    loadHistory();
+                }
+            } catch (e) {
+                alert("Failed to start simulation.");
+            }
+        }
+
+        function showSimulation(run) {
+            document.getElementById('welcome-state').classList.add('hidden');
+            document.getElementById('simulation-view').classList.remove('hidden');
+
+            // Header stats
+            const badge = document.getElementById('sim-status-badge');
+            badge.textContent = run.status;
+            badge.className = `status ${run.status}`;
+
+            document.getElementById('sim-turns').textContent = run.turns;
+            document.getElementById('sim-price').textContent = run.final_price ? `$${run.final_price.toFixed(2)}` : 'N/A';
+            document.getElementById('sim-reason').textContent = run.reason || 'Completed';
+
+            // Timeline
+            const timeline = document.getElementById('timeline-container');
+            timeline.innerHTML = '';
+
+            if (run.steps && run.steps.length > 0) {
+                run.steps.forEach((step, index) => {
+                    const stepEl = document.createElement('div');
+                    stepEl.className = 'timeline-step';
+                    stepEl.style.animationDelay = `${index * 0.05}s`;
+
+                    const priceText = (typeof step.action.price === 'number')
+                        ? `<span class="action-price">$${step.action.price.toFixed(2)}</span>`
+                        : '';
+
+                    stepEl.innerHTML = `
+                        <div class="turn">Turn ${step.turn}</div>
+                        <div class="content">
+                            <span class="actor">${step.agent}</span>
+                            <span class="action-tag">${step.action.action}</span>
+                            ${priceText}
+                        </div>
+                    `;
+                    timeline.appendChild(stepEl);
+                });
+            } else {
+                timeline.innerHTML = '<p style="color:var(--text-muted)">Tracking data unavailable for this run.</p>';
+            }
+        }
+    </script>
+</body>
+
+</html>
