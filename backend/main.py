@@ -107,10 +107,17 @@ def get_simulation(sim_id: str):
 @app.get("/config/options")
 def get_config_options():
     """Returns all available config options for the frontend dropdowns."""
+    from agents.strategies import list_strategies
     return {
-        "strategies": [e.value for e in StrategyType],
+        "strategies": list_strategies(),
         "risk_levels": [e.value for e in RiskLevel],
         "negotiation_styles": [e.value for e in NegotiationStyle],
     }
+
+@app.get("/telemetry")
+def get_telemetry():
+    """Returns global telemetry metrics across all simulations."""
+    from telemetry_module.telemetry import collector
+    return {"status": "success", "data": collector.get_global_metrics()}
 
 app.mount("/play", StaticFiles(directory="frontend", html=True), name="frontend")

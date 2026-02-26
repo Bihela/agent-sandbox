@@ -13,9 +13,12 @@ from enum import Enum
 class StrategyType(str, Enum):
     """Agent negotiation strategy presets."""
     AGGRESSIVE = "aggressive"       # Push hard, small concessions
-    COOPERATIVE = "cooperative"     # Seek fast agreement, willing to concede
-    ANALYTICAL = "analytical"       # Data-driven, slow calculated moves
-    ADAPTIVE = "adaptive"           # Adjust based on opponent behavior
+    BALANCED = "balanced"           # Moderate, adaptive approach
+    CONSERVATIVE = "conservative"   # Risk-averse, fast agreement
+    # Legacy aliases (still valid in API)
+    COOPERATIVE = "cooperative"     # → maps to conservative strategy
+    ANALYTICAL = "analytical"       # → maps to balanced strategy
+    ADAPTIVE = "adaptive"           # → maps to balanced strategy
 
 
 class RiskLevel(str, Enum):

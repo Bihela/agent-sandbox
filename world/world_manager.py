@@ -5,6 +5,7 @@ from agents.llm_agent import LLMBuyerAgent, LLMSellerAgent
 from world.mediator import Mediator
 from metrics.storage import save_simulation_result
 from configs.simulation_config import SimulationConfig, DEFAULT_CONFIG
+from telemetry_module.telemetry import tracer, collector
 
 class WorldManager:
     def __init__(self):
@@ -27,9 +28,7 @@ class WorldManager:
 
         # Build prompt modifiers from config
         style_prompt = config.get_style_prompt()
-        buyer_strategy = config.get_strategy_prompt(config.buyer_config.strategy)
         buyer_risk = config.get_risk_prompt(config.buyer_config.risk_level)
-        seller_strategy = config.get_strategy_prompt(config.seller_config.strategy)
         seller_risk = config.get_risk_prompt(config.seller_config.risk_level)
 
         buyer_temp = config.buyer_config.temperature if config.buyer_config.temperature is not None else config.temperature
@@ -38,7 +37,7 @@ class WorldManager:
         agent_a = LLMBuyerAgent(
             "Alice (LLM Buyer)", **buyer_params,
             temperature=buyer_temp,
-            strategy_prompt=buyer_strategy,
+            strategy_name=config.buyer_config.strategy.value,
             risk_prompt=buyer_risk,
             style_prompt=style_prompt,
             model=config.model_name,
@@ -46,15 +45,34 @@ class WorldManager:
         agent_b = LLMSellerAgent(
             "Bob (LLM Seller)", **seller_params,
             temperature=seller_temp,
-            strategy_prompt=seller_strategy,
+            strategy_name=config.seller_config.strategy.value,
             risk_prompt=seller_risk,
             style_prompt=style_prompt,
             model=config.model_name,
         )
         mediator = Mediator(max_turns=scenario.max_turns)
 
+        # Initialize telemetry for this simulation
+        collector.start_simulation_telemetry(sim_id)
+        agent_a._sim_id = sim_id
+        agent_b._sim_id = sim_id
+
         # 2. Start negotiation and monitor with initial state
-        result_details = self._run_negotiation_loop(agent_a, agent_b, mediator, scenario.get_initial_state())
+        with tracer.start_as_current_span(
+            "simulation.run",
+            attributes={
+                "simulation.id": sim_id,
+                "simulation.buyer_max": buyer_params.get("max_price", 150),
+                "simulation.seller_min": seller_params.get("min_price", 100),
+                "simulation.max_turns": scenario.max_turns,
+                "config.style": config.negotiation_style.value,
+                "config.buyer_strategy": config.buyer_config.strategy.value,
+                "config.seller_strategy": config.seller_config.strategy.value,
+            }
+        ) as span:
+            result_details = self._run_negotiation_loop(agent_a, agent_b, mediator, scenario.get_initial_state())
+            span.set_attribute("simulation.status", result_details["status"])
+            span.set_attribute("simulation.turns", result_details["turns"])
 
         # 2b. Run failure taxonomy analysis over the completed transcript
         failure_report = mediator.get_failure_report(
@@ -99,6 +117,7 @@ class WorldManager:
             "steps": result_details["steps"],
             "failure_report": failure_report,
             "config": config_snapshot,
+            "telemetry": collector.finalize_simulation(sim_id, result_details["turns"], result_details["steps"]),
         }
         self.historical_runs[sim_id] = output
         self.results.append(output)

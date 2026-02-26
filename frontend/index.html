@@ -709,6 +709,96 @@
             line-height: 1.4;
         }
 
+        /* ─── Telemetry Panel ─── */
+        .telemetry-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .tel-metric {
+            text-align: center;
+            padding: 10px 6px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+        }
+
+        .tel-metric .tel-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .tel-metric .tel-label {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+
+        .tel-metric.accent .tel-value {
+            color: var(--accent);
+        }
+
+        .tel-metric.primary .tel-value {
+            color: var(--primary);
+        }
+
+        .tel-metric.warning .tel-value {
+            color: var(--warning);
+        }
+
+        .tel-metric.danger .tel-value {
+            color: var(--danger);
+        }
+
+        .latency-bars {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .latency-bar-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.7rem;
+        }
+
+        .latency-bar-label {
+            width: 120px;
+            flex-shrink: 0;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .latency-bar-track {
+            flex: 1;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .latency-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.4s ease;
+        }
+
+        .latency-bar-value {
+            width: 55px;
+            text-align: right;
+            color: var(--text-dim);
+            font-size: 0.65rem;
+            flex-shrink: 0;
+        }
+
         /* ─── Animations ─── */
         @keyframes fadeIn {
             from {
@@ -1055,6 +1145,15 @@
                 <div id="failure-cards-container" class="failure-cards"></div>
             </div>
 
+            <!-- Telemetry Panel -->
+            <div class="glass-panel hidden" id="telemetry-panel">
+                <div class="panel-header">
+                    <h2>📡 Telemetry</h2>
+                </div>
+                <div class="telemetry-grid" id="tel-metrics"></div>
+                <div class="latency-bars" id="tel-latency-bars"></div>
+            </div>
+
             <!-- Decision Timeline -->
             <div class="glass-panel">
                 <div class="panel-header">
@@ -1239,6 +1338,9 @@
 
             // ─ Failure Report ─
             renderFailureReport(run.failure_report);
+
+            // ─ Telemetry ─
+            renderTelemetry(run.telemetry);
 
             // ─ Timeline ─
             renderTimeline(run.steps);
@@ -1470,6 +1572,64 @@
                     </div>
                 `;
                 cardsContainer.appendChild(card);
+            });
+        }
+
+        // ─── Telemetry ───
+        function renderTelemetry(tel) {
+            const panel = document.getElementById('telemetry-panel');
+            const metricsEl = document.getElementById('tel-metrics');
+            const barsEl = document.getElementById('tel-latency-bars');
+
+            if (!tel || !tel.decisions || tel.decisions.length === 0) {
+                panel.classList.add('hidden');
+                return;
+            }
+
+            panel.classList.remove('hidden');
+
+            // Metrics grid
+            metricsEl.innerHTML = `
+                <div class="tel-metric accent">
+                    <div class="tel-value">${tel.avg_decision_latency_ms}ms</div>
+                    <div class="tel-label">Avg Latency</div>
+                </div>
+                <div class="tel-metric primary">
+                    <div class="tel-value">${tel.total_tokens}</div>
+                    <div class="tel-label">Tokens Used</div>
+                </div>
+                <div class="tel-metric ${tel.total_errors > 0 ? 'danger' : 'warning'}">
+                    <div class="tel-value">${tel.total_errors}</div>
+                    <div class="tel-label">Model Errors</div>
+                </div>
+                <div class="tel-metric primary">
+                    <div class="tel-value">${tel.negotiation_complexity}</div>
+                    <div class="tel-label">Complexity</div>
+                </div>
+            `;
+
+            // Latency bars per decision
+            const maxLatency = Math.max(...tel.decisions.map(d => d.latency_ms), 1);
+            barsEl.innerHTML = '';
+            tel.decisions.forEach((d, i) => {
+                const pct = Math.min((d.latency_ms / maxLatency) * 100, 100);
+                const color = d.error
+                    ? 'var(--danger)'
+                    : d.latency_ms > maxLatency * 0.8
+                        ? 'var(--warning)'
+                        : 'var(--accent)';
+
+                const row = document.createElement('div');
+                row.className = 'latency-bar-row';
+                row.style.animationDelay = `${i * 0.03}s`;
+                row.innerHTML = `
+                    <div class="latency-bar-label">${d.agent.split(' ')[0]}${d.fallback ? ' ⚡' : ''}</div>
+                    <div class="latency-bar-track">
+                        <div class="latency-bar-fill" style="width:${pct}%;background:${color}"></div>
+                    </div>
+                    <div class="latency-bar-value">${d.latency_ms}ms${d.tokens ? ' · ' + d.tokens + 't' : ''}</div>
+                `;
+                barsEl.appendChild(row);
             });
         }
     </script>

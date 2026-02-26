@@ -60,4 +60,21 @@ This document records decisions made during development, specifically logging ap
 
 ---
 
+### 🟢 [OpenTelemetry Logging System — Research-Grade Telemetry]
+- **Date**: 2026-02-26
+- **Context**: No structured observability existed. We needed to measure decision latency, token usage, model errors, and negotiation complexity — the metrics real agent research systems track.
+- **Decision**: Built `telemetry_module/telemetry.py` using OpenTelemetry SDK with a custom `TelemetryCollector` for in-memory aggregation. OTel counters (LLM calls, errors, fallbacks) and histograms (latency, tokens, complexity) feed the standard OTel pipeline. The collector provides per-simulation and global metric summaries via `/telemetry` API. Initially named the package `logging/` but renamed to `telemetry_module/` to avoid shadowing Python's built-in `logging`.
+- **Reasoning (Why rejected)**: Pure OTel exporters (Jaeger, Prometheus) were considered but rejected since they require external infrastructure. The in-memory collector gives immediate API-accessible metrics with zero setup.
+- **Impact**: Every agent decision now has latency, token count, and error tracking. Cross-session P95/max latency and error rates enable real research-grade analysis.
+
+---
+
+### 🟢 [Agent Strategy System — Pluggable Strategy Modules]
+- **Date**: 2026-02-26
+- **Context**: Strategy behavior was previously just a prompt string from config. We needed actual strategy modules with both LLM prompts and fallback logic to enable proper strategy experiments.
+- **Decision**: Built `agents/strategies/` package with `BaseStrategy` abstract class defining `get_system_prompt()`, `compute_fallback_action()`, and `concession_rate`. Three implementations: `AggressiveStrategy` (5%), `BalancedStrategy` (10%), `ConservativeStrategy` (20%). Registry with aliases maps config enum values to strategy instances. Updated `LLMAgent` to load strategies via `get_strategy()` and use them for both LLM prompt injection and programmatic fallback.
+- **Impact**: Strategy experiments are now possible: aggressive-vs-conservative completes in 3 turns (fast concession), aggressive-vs-aggressive takes longer. New strategies can be added by creating a new file and adding to the registry.
+
+---
+
 *(No more entries. Add entries here when evaluating features, dependencies, or architectural choices.)*
