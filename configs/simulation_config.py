@@ -42,6 +42,7 @@ class AgentConfig(BaseModel):
     role: str = Field(default="negotiator", description="Agent role (e.g. buyer, seller)")
     strategy: StrategyType = Field(default=StrategyType.ADAPTIVE, description="Negotiation strategy preset")
     risk_level: RiskLevel = Field(default=RiskLevel.MEDIUM, description="Risk tolerance")
+    model_name: Optional[str] = Field(None, description="Per-agent LLM model name (overrides global)")
     temperature: float = Field(default=0.7, ge=0.0, le=2.0, description="LLM temperature (0=deterministic, 2=creative)")
 
 

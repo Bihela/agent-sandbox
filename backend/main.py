@@ -2,11 +2,13 @@ from __future__ import annotations
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Any
 from world.world_manager import WorldManager
+from agents.llm_agent import LLMBuyerAgent, LLMSellerAgent
 from configs.simulation_config import SimulationConfig, AgentConfig, StrategyType, RiskLevel, NegotiationStyle, RedTeamConfig
 from scenarios.price_negotiation import PriceNegotiationScenario
 from scenarios.multi_vendor_negotiation import MultiVendorNegotiationScenario
+from scenarios.dynamic_scenario import DynamicScenario
 from tournaments.tournament_runner import TournamentRunner
 from tournaments.leaderboard import Leaderboard
 from experiments.experiment_runner import ExperimentRunner
@@ -15,6 +17,10 @@ from simulation_queue.queue_manager import QueueManager
 from simulation_queue.worker import SimulationWorker
 import logging
 import threading
+import json
+import os
+
+SCENARIOS_FILE = "data/scenarios.json"
 
 app = FastAPI()
 world_manager = WorldManager()
@@ -42,6 +48,7 @@ class AgentConfigRequest(BaseModel):
     role: str = "negotiator"
     strategy: str = "adaptive"
     risk_level: str = "medium"
+    model_name: Optional[str] = None
     temperature: float = 0.7
 
 
@@ -76,6 +83,19 @@ class BattleRequest(BaseModel):
     model_name: str = "mistral"
     buyer_max: float = 150.0
     seller_min: float = 100.0
+    negotiation_style: str = "formal"
+
+class ScenarioCreateRequest(BaseModel):
+    name: str
+    description: str
+    buyer_max: float = 150.0
+    seller_min: float = 100.0
+    num_vendors: int = 1
+    max_turns: int = 20
+    goal: str = "maximize_efficiency"
+    custom_params: Dict[str, Any] = {}
+
+ScenarioCreateRequest.model_rebuild()
 
 
 @app.get("/")
@@ -140,6 +160,55 @@ def get_experiment_results(experiment_id: str):
         raise HTTPException(status_code=404, detail="Experiment not found")
     return {"status": "success", "data": res}
 
+# ─── Scenario Builder Endpoints ───
+
+@app.post("/scenario/create")
+def create_scenario(req: ScenarioCreateRequest):
+    try:
+        scenarios = []
+        if os.path.exists(SCENARIOS_FILE):
+            with open(SCENARIOS_FILE, "r") as f:
+                scenarios = json.load(f)
+        
+        # Create unique ID from name
+        scenario_id = req.name.lower().replace(" ", "_")
+        
+        new_scenario = {
+            "id": scenario_id,
+            **req.dict()
+        }
+        
+        # Check if exists and update or append
+        existing_idx = next((i for i, s in enumerate(scenarios) if s["id"] == scenario_id), None)
+        if existing_idx is not None:
+            scenarios[existing_idx] = new_scenario
+        else:
+            scenarios.append(new_scenario)
+            
+        with open(SCENARIOS_FILE, "w") as f:
+            json.dump(scenarios, f, indent=4)
+            
+        return {"status": "success", "scenario_id": scenario_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/scenario/list")
+def list_scenarios():
+    core_scenarios = [
+        {"id": "price_negotiation", "name": "Standard Price Negotiation", "description": "1-on-1 negotiation", "type": "core"},
+        {"id": "multi_vendor", "name": "Multi-Vendor Competition", "description": "1 Buyer vs N Sellers", "type": "core"}
+    ]
+    custom_scenarios = []
+    if os.path.exists(SCENARIOS_FILE):
+        try:
+            with open(SCENARIOS_FILE, "r") as f:
+                custom_scenarios = json.load(f)
+                for s in custom_scenarios:
+                    s["type"] = "custom"
+        except:
+            pass
+            
+    return {"status": "success", "data": core_scenarios + custom_scenarios}
 
 @app.post("/simulation/start")
 def start_simulation(req: SimulationRequest):
@@ -149,7 +218,26 @@ def start_simulation(req: SimulationRequest):
         elif req.scenario_type == "multi_vendor":
             scenario = MultiVendorNegotiationScenario(buyer_max=req.buyer_max, seller_min=req.seller_min, num_vendors=req.num_vendors)
         else:
-            raise ValueError(f"Unknown scenario type: {req.scenario_type}")
+            # Check dynamic scenarios
+            found_scenario = None
+            if os.path.exists(SCENARIOS_FILE):
+                with open(SCENARIOS_FILE, "r") as f:
+                    scenarios = json.load(f)
+                    found_scenario = next((s for s in scenarios if s["id"] == req.scenario_type), None)
+            
+            if found_scenario:
+                scenario = DynamicScenario(
+                    name=found_scenario["name"],
+                    description=found_scenario["description"],
+                    buyer_max=found_scenario.get("buyer_max", 150.0),
+                    seller_min=found_scenario.get("seller_min", 100.0),
+                    num_vendors=found_scenario.get("num_vendors", 1),
+                    max_turns=found_scenario.get("max_turns", 20),
+                    goal=found_scenario.get("goal", "maximize_efficiency"),
+                    custom_params=found_scenario.get("custom_params", {})
+                )
+            else:
+                raise HTTPException(status_code=400, detail=f"Unknown scenario type: {req.scenario_type}")
 
         # Build SimulationConfig from request
         temp = req.temperature if req.temperature is not None else 0.7
@@ -276,14 +364,35 @@ def get_simulation(sim_id: str):
     return {"status": "success", "data": result}
 
 @app.get("/config/options")
-def get_config_options():
-    """Returns all available config options for the frontend dropdowns."""
-    from agents.strategies import list_strategies
-    return {
-        "strategies": list_strategies(),
-        "risk_levels": [e.value for e in RiskLevel],
-        "negotiation_styles": [e.value for e in NegotiationStyle],
-    }
+def get_available_options():
+    try:
+        from agents.strategies import list_strategies
+        from agents.providers.provider_factory import ProviderFactory
+        
+        # Aggregate models from all providers
+        all_models = []
+        providers = ["ollama", "openai", "gemini", "groq"]
+        
+        for p_name in providers:
+            try:
+                p = ProviderFactory.get_provider(p_name)
+                p_models = p.get_available_models()
+                for m in p_models:
+                    all_models.append(f"{p_name}:{m}")
+            except Exception:
+                pass
+
+        if not all_models:
+            all_models = ["ollama:mistral", "ollama:llama3"]
+
+        return {
+            "models": all_models,
+            "strategies": list_strategies(),
+            "risk_levels": [r.value for r in RiskLevel],
+            "negotiation_styles": [n.value for n in NegotiationStyle]
+        }
+    except Exception as e:
+        return {"error": str(e)}
 
 @app.get("/telemetry")
 def get_telemetry():
@@ -348,6 +457,34 @@ def start_arena_battle(req: BattleRequest):
             max_turns=20
         )
         
+        # Extract provider name from model_name (e.g., "ollama:mistral" -> "ollama")
+        b_model = req.buyer_config.model_name if req.buyer_config and req.buyer_config.model_name else req.model_name
+        s_model = req.seller_config.model_name if req.seller_config and req.seller_config.model_name else req.model_name
+        
+        b_provider = b_model.split(":")[0] if ":" in b_model else "ollama"
+        s_provider = s_model.split(":")[0] if ":" in s_model else "ollama"
+
+        # Create LLM Agents
+        buyer = LLMBuyerAgent(
+            name="Alice (LLM Buyer)",
+            max_price=scenario.buyer_max,
+            model=b_model,
+            provider_name=b_provider,
+            strategy_name=req.buyer_config.strategy,
+            risk_prompt=req.buyer_config.risk_level,
+            style_prompt=req.negotiation_style
+        )
+        
+        seller = LLMSellerAgent(
+            name="Bob (LLM Seller)",
+            min_price=scenario.seller_min,
+            model=s_model,
+            provider_name=s_provider,
+            strategy_name=req.seller_config.strategy,
+            risk_prompt=req.seller_config.risk_level,
+            style_prompt=req.negotiation_style
+        )
+
         # Create Config
         config = SimulationConfig(
             buyer_max=req.buyer_max,

@@ -1300,8 +1300,57 @@
             }
 
             50% {
-                transform: scale(1.15);
+                transform: scale(1.1);
+                filter: brightness(1.2);
             }
+        }
+
+        .arena-select {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-heading);
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            width: 100%;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 4px;
+        }
+
+        .arena-select:hover {
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        .arena-select option {
+            background: #1c2128;
+            color: white;
+            padding: 10px;
+        }
+
+        .arena-select optgroup {
+            background: #2d3748;
+            color: var(--accent);
+            font-weight: 800;
+            font-style: normal;
+        }
+
+        .stat-item {
+            margin-bottom: 12px;
+            text-align: left;
+        }
+
+        .stat-label {
+            display: block;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-dim);
+            margin-bottom: 4px;
+            font-weight: 700;
         }
 
         .fighter-stats {
@@ -1444,6 +1493,13 @@
             </div>
 
             <div class="input-group">
+                <label>System Model</label>
+                <select id="cfg-model" class="arena-select">
+                    <!-- Populated via API -->
+                </select>
+            </div>
+
+            <div class="input-group">
                 <label>Model Temperature</label>
                 <input type="range" id="cfg-temp" min="0" max="2" step="0.1" value="0.7"
                     oninput="document.getElementById('temp-val-sidebar').textContent=this.value">
@@ -1566,6 +1622,8 @@
             <div class="header-nav">
                 <div class="header-nav-item active" id="tab-discovery" onclick="switchNav('discovery')">Ecosystem
                     Discovery</div>
+                <div class="header-nav-item" id="tab-architect" onclick="switchNav('architect')">Scenario Architect
+                </div>
                 <div class="header-nav-item" id="tab-arena" onclick="switchNav('arena')">Performance Arena</div>
                 <div class="header-nav-item" id="tab-rankings" onclick="switchNav('rankings')">Intelligence Hub</div>
             </div>
@@ -1599,30 +1657,33 @@
                         negotiation capabilities.</p>
 
                     <div class="battle-view">
-                        <!-- Red Fighter -->
-                        <div class="fighter-card red" style="cursor: pointer; position: relative;"
-                            title="Click to configure agent">
-                            <span class="fighter-role">Buyer Candidate</span>
-                            <div class="fighter-name">CHALLENGER A</div>
+                        <!-- Fighter A (Buyer) -->
+                        <div class="fighter-card red" id="fighter-a">
+                            <div class="fighter-header">
+                                <span class="fighter-tag">BUYER CHALLENGER</span>
+                                <h3 class="fighter-name">Alpha Prime</h3>
+                            </div>
                             <div class="fighter-stats">
-                                <div class="input-group">
-                                    <label>Strategy Profile</label>
-                                    <select id="arena-b-strat" class="arena-select"
-                                        style="background: var(--surface-hover);"></select>
-                                </div>
-                                <div class="input-group">
-                                    <label>Risk Threshold</label>
-                                    <select id="arena-b-risk" style="background: var(--surface-hover);">
-                                        <option value="medium">Medium</option>
-                                        <option value="low">Low</option>
-                                        <option value="high">High</option>
+                                <div class="stat-item">
+                                    <span class="stat-label">Model</span>
+                                    <select class="arena-select" id="arena-buyer-model">
+                                        <!-- Populated via API -->
                                     </select>
                                 </div>
-                                <div class="input-group">
-                                    <label>Foundation Model</label>
-                                    <select id="arena-b-model" style="background: var(--surface-hover);">
-                                        <option value="mistral">Mistral (Local)</option>
-                                        <option value="llama3">Llama 3 (Local)</option>
+                                <div class="stat-item">
+                                    <span class="stat-label">Strategy</span>
+                                    <select class="arena-select" id="arena-buyer-strategy">
+                                        <option value="aggressive">Aggressive</option>
+                                        <option value="balanced">Balanced</option>
+                                        <option value="conservative">Conservative</option>
+                                    </select>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Risk Level</span>
+                                    <select class="arena-select" id="arena-buyer-risk">
+                                        <option value="low">Low</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="high">High</option>
                                     </select>
                                 </div>
                             </div>
@@ -1630,30 +1691,33 @@
 
                         <div class="vs-badge">VS</div>
 
-                        <!-- Blue Fighter -->
-                        <div class="fighter-card blue" style="cursor: pointer; position: relative;"
-                            title="Click to configure agent">
-                            <span class="fighter-role">Seller Candidate</span>
-                            <div class="fighter-name">CHALLENGER B</div>
+                        <!-- Fighter B (Seller) -->
+                        <div class="fighter-card blue" id="fighter-b">
+                            <div class="fighter-header">
+                                <span class="fighter-tag">SELLER DEFENDER</span>
+                                <h3 class="fighter-name">Omega Shield</h3>
+                            </div>
                             <div class="fighter-stats">
-                                <div class="input-group">
-                                    <label>Strategy Profile</label>
-                                    <select id="arena-s-strat" class="arena-select"
-                                        style="background: var(--surface-hover);"></select>
-                                </div>
-                                <div class="input-group">
-                                    <label>Risk Threshold</label>
-                                    <select id="arena-s-risk" style="background: var(--surface-hover);">
-                                        <option value="medium">Medium</option>
-                                        <option value="low">Low</option>
-                                        <option value="high">High</option>
+                                <div class="stat-item">
+                                    <span class="stat-label">Model</span>
+                                    <select class="arena-select" id="arena-seller-model">
+                                        <!-- Populated via API -->
                                     </select>
                                 </div>
-                                <div class="input-group">
-                                    <label>Foundation Model</label>
-                                    <select id="arena-s-model" style="background: var(--surface-hover);">
-                                        <option value="mistral">Mistral (Local)</option>
-                                        <option value="llama3">Llama 3 (Local)</option>
+                                <div class="stat-item">
+                                    <span class="stat-label">Strategy</span>
+                                    <select class="arena-select" id="arena-seller-strategy">
+                                        <option value="aggressive">Aggressive</option>
+                                        <option value="balanced">Balanced</option>
+                                        <option value="conservative">Conservative</option>
+                                    </select>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Risk Level</span>
+                                    <select class="arena-select" id="arena-seller-risk">
+                                        <option value="low">Low</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="high">High</option>
                                     </select>
                                 </div>
                             </div>
@@ -1684,6 +1748,74 @@
                     <div
                         style="color: var(--text-dim); padding: 50px; text-align: center; background: var(--surface-2); border-radius: 12px; border: 1px dashed var(--border);">
                         Initializing global performance analytics...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scenario Architect View -->
+            <div id="architect-view" class="hidden">
+                <div style="max-width: 800px; margin: 0 auto;">
+                    <h2 style="font-size: 1.8rem; color: var(--text-heading); margin-bottom: 8px; font-weight: 600;">
+                        Scenario Architect</h2>
+                    <p style="color: var(--text-muted); margin-bottom: 30px;">Design custom negotiation environments and
+                        deploy them to the sandbox.</p>
+
+                    <div class="fighter-card" style="text-align: left; padding: 40px;">
+                        <div class="two-col" style="margin-bottom: 24px;">
+                            <div class="input-group">
+                                <label>Scenario Name</label>
+                                <input type="text" id="arch-name" placeholder="e.g. Supply Chain Crisis">
+                            </div>
+                            <div class="input-group">
+                                <label>Target Goal</label>
+                                <select id="arch-goal">
+                                    <option value="minimize_cost">Cost Minimization</option>
+                                    <option value="maximize_efficiency">Maximum Efficiency</option>
+                                    <option value="market_dominance">Market Dominance</option>
+                                    <option value="fair_split">Fair Value Split</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="input-group" style="margin-bottom: 24px;">
+                            <label>Contextual Description</label>
+                            <textarea id="arch-desc"
+                                style="width: 100%; background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 12px; border-radius: 8px; font-family: inherit; height: 100px;"
+                                placeholder="Describe the market conditions, constraints, and stakes..."></textarea>
+                        </div>
+
+                        <div class="two-col" style="margin-bottom: 32px;">
+                            <div>
+                                <div class="input-group">
+                                    <label>Agent Count</label>
+                                    <input type="number" id="arch-vendors" value="1" min="1" max="5">
+                                    <span style="font-size: 0.65rem; color: var(--text-dim);">(1 = 1v1, >1 =
+                                        Multi-Vendor)</span>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="input-group">
+                                    <label>Max negotiation Turns</label>
+                                    <input type="number" id="arch-turns" value="20" min="5" max="50">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="two-col"
+                            style="margin-bottom: 40px; border-top: 1px solid var(--border); padding-top: 24px;">
+                            <div class="input-group">
+                                <label>Buyer Constraint (Max $)</label>
+                                <input type="number" id="arch-buyer-max" value="150">
+                            </div>
+                            <div class="input-group">
+                                <label>Seller Constraint (Min $)</label>
+                                <input type="number" id="arch-seller-min" value="100">
+                            </div>
+                        </div>
+
+                        <button class="btn" style="width: 100%; padding: 20px; font-size: 1.1rem;"
+                            onclick="saveDynamicScenario()">Deploy Scenario to Ecosystem</button>
+                        <div id="arch-status" style="margin-top: 12px; text-align: center; font-size: 0.85rem;"></div>
                     </div>
                 </div>
             </div>
@@ -1791,7 +1923,77 @@
                 loadConfigOptions();
                 loadAgentCards();
                 loadLeaderboard();
+                loadScenarios();
             });
+
+            async function loadScenarios() {
+                try {
+                    const res = await fetch(`${API_BASE}/scenario/list`);
+                    const json = await res.json();
+                    if (json.status === 'success') {
+                        const select = document.getElementById('scenario-type');
+                        const currentValue = select.value;
+
+                        let html = '';
+                        json.data.forEach(s => {
+                            const icon = s.type === 'core' ? '🏛️' : '🛠️';
+                            html += `<option value="${s.id}">${icon} ${s.name}</option>`;
+                        });
+                        select.innerHTML = html;
+                        select.value = currentValue || 'price_negotiation';
+                    }
+                } catch (e) {
+                    console.error("Failed to load scenarios:", e);
+                }
+            }
+
+            async function saveDynamicScenario() {
+                const btn = event.target;
+                const status = document.getElementById('arch-status');
+                const payload = {
+                    name: document.getElementById('arch-name').value,
+                    description: document.getElementById('arch-desc').value,
+                    buyer_max: parseFloat(document.getElementById('arch-buyer-max').value),
+                    seller_min: parseFloat(document.getElementById('arch-seller-min').value),
+                    num_vendors: parseInt(document.getElementById('arch-vendors').value),
+                    max_turns: parseInt(document.getElementById('arch-turns').value),
+                    goal: document.getElementById('arch-goal').value
+                };
+
+                if (!payload.name || !payload.description) {
+                    status.style.color = 'var(--danger)';
+                    status.innerText = "Please provide both a name and description.";
+                    return;
+                }
+
+                btn.disabled = true;
+                btn.innerText = "Deploying Scenario...";
+
+                try {
+                    const res = await fetch(`${API_BASE}/scenario/create`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const json = await res.json();
+                    if (json.status === 'success') {
+                        status.style.color = 'var(--success)';
+                        status.innerText = "Scenario successfully deployed to ecosystem!";
+                        loadScenarios();
+                        setTimeout(() => {
+                            switchNav('discovery');
+                            document.getElementById('scenario-type').value = json.scenario_id;
+                            toggleMultiAgentUI();
+                        }, 1500);
+                    }
+                } catch (e) {
+                    status.style.color = 'var(--danger)';
+                    status.innerText = "Deployment failed: " + e.message;
+                } finally {
+                    btn.disabled = false;
+                    btn.innerText = "Deploy Scenario to Ecosystem";
+                }
+            }
 
             function toggleSettingsOverlay(show) {
                 const overlay = document.getElementById('settings-overlay');
@@ -1899,6 +2101,7 @@
                         });
                     }
                 } else {
+                    payload.model_name = document.getElementById('cfg-model').value;
                     payload.buyer_config = {
                         strategy: document.getElementById('cfg-buyer-strategy').value,
                         risk_level: document.getElementById('cfg-buyer-risk').value,
@@ -2053,57 +2256,51 @@
                 }
             }
 
-            function toggleMultiAgentUI() {
-                const scenarioType = document.getElementById('scenario-type').value;
-                const ctrl1v1 = document.getElementById('1v1-controls');
-                const ctrlMulti = document.getElementById('multi-vendor-controls');
+            function switchNav(tabId) {
+                // Update tabs
+                document.querySelectorAll('.header-nav-item').forEach(el => el.classList.remove('active'));
+                const activeTab = document.getElementById(`tab-${tabId}`);
+                if (activeTab) activeTab.classList.add('active');
 
-                if (scenarioType === 'multi_vendor') {
-                    ctrl1v1.classList.add('hidden');
-                    ctrlMulti.classList.remove('hidden');
-                } else {
-                    ctrl1v1.classList.remove('hidden');
-                    ctrlMulti.classList.add('hidden');
+                // Update views
+                document.getElementById('welcome-state').classList.add('hidden');
+                document.getElementById('arena-view').classList.add('hidden');
+                document.getElementById('architect-view').classList.add('hidden');
+                document.getElementById('rankings-view').classList.add('hidden');
+                document.getElementById('simulation-view').classList.add('hidden');
+
+                // Toggle visibility
+                if (tabId === 'discovery') {
+                    document.getElementById('welcome-state').classList.remove('hidden');
+                    document.getElementById('controls-panel').style.display = 'block';
+                } else if (tabId === 'arena') {
+                    document.getElementById('arena-view').classList.remove('hidden');
+                    document.getElementById('controls-panel').style.display = 'none';
+                } else if (tabId === 'architect') {
+                    document.getElementById('architect-view').classList.remove('hidden');
+                    document.getElementById('controls-panel').style.display = 'none';
+                } else if (tabId === 'rankings') {
+                    document.getElementById('rankings-view').classList.remove('hidden');
+                    document.getElementById('controls-panel').style.display = 'none';
+                    loadLeaderboard();
                 }
             }
 
-            // ─── Navigation ───
-            function switchNav(tab) {
-                const discoveryTab = document.getElementById('tab-discovery');
-                const arenaTab = document.getElementById('tab-arena');
-                const rankingsTab = document.getElementById('tab-rankings');
+            function toggleMultiAgentUI() {
+                const type = document.getElementById('scenario-type').value;
+                const v1 = document.getElementById('1v1-controls');
+                const multi = document.getElementById('multi-vendor-controls');
 
-                const welcome = document.getElementById('welcome-state');
-                const arena = document.getElementById('arena-view');
-                const sim = document.getElementById('simulation-view');
-                const rankings = document.getElementById('rankings-view');
-                const controls = document.getElementById('controls-panel');
-
-                // Handle nav items (new header structure)
-                document.querySelectorAll('.header-nav-item').forEach(el => el.classList.remove('active'));
-
-                if (tab === 'arena') {
-                    arenaTab.classList.add('active');
-                    arena.classList.remove('hidden');
-                    welcome.classList.add('hidden');
-                    sim.classList.add('hidden');
-                    rankings.classList.add('hidden');
-                    controls.style.display = 'none';
-                } else if (tab === 'rankings') {
-                    rankingsTab.classList.add('active');
-                    rankings.classList.remove('hidden');
-                    welcome.classList.add('hidden');
-                    arena.classList.add('hidden');
-                    sim.classList.add('hidden');
-                    controls.style.display = 'none';
-                    loadLeaderboard();
+                if (type === 'price_negotiation') {
+                    v1.classList.remove('hidden');
+                    multi.classList.add('hidden');
+                } else if (type === 'multi_vendor') {
+                    v1.classList.remove('hidden');
+                    multi.classList.remove('hidden');
                 } else {
-                    discoveryTab.classList.add('active');
-                    welcome.classList.remove('hidden');
-                    arena.classList.add('hidden');
-                    sim.classList.add('hidden');
-                    rankings.classList.add('hidden');
-                    controls.style.display = 'block';
+                    // Custom scenarios default to 1v1 inputs for now
+                    v1.classList.remove('hidden');
+                    multi.classList.add('hidden');
                 }
             }
 
@@ -2112,21 +2309,21 @@
                 btn.textContent = 'RUNNING BENCHMARK...';
                 btn.disabled = true;
 
-                const bStrat = document.getElementById('arena-b-strat').value;
-                const sStrat = document.getElementById('arena-s-strat').value;
-                const bModel = document.getElementById('arena-b-model').value;
-                const sModel = document.getElementById('arena-s-model').value;
+                const bStrat = document.getElementById('arena-buyer-strategy').value;
+                const sStrat = document.getElementById('arena-seller-strategy').value;
+                const bModel = document.getElementById('arena-buyer-model').value;
+                const sModel = document.getElementById('arena-seller-model').value;
 
                 const payload = {
                     buyer_config: {
                         strategy: bStrat,
-                        risk_level: document.getElementById('arena-b-risk').value,
+                        risk_level: document.getElementById('arena-buyer-risk').value,
                         temperature: 0.7,
                         model_name: bModel
                     },
                     seller_config: {
                         strategy: sStrat,
-                        risk_level: document.getElementById('arena-s-risk').value,
+                        risk_level: document.getElementById('arena-seller-risk').value,
                         temperature: 0.7,
                         model_name: sModel
                     },
@@ -2159,39 +2356,64 @@
                     const res = await fetch(`${API_BASE}/config/options`);
                     const data = await res.json();
 
-                    const buyerSelect = document.getElementById('cfg-buyer-strategy');
-                    const sellerSelect = document.getElementById('cfg-seller-strategy');
-                    const arenaB = document.getElementById('arena-b-strat');
-                    const arenaS = document.getElementById('arena-s-strat');
-                    const arenaBModel = document.getElementById('arena-b-model');
-                    const arenaSModel = document.getElementById('arena-s-model');
+                    const sidebarModel = document.getElementById('cfg-model');
+                    const buyerModel = document.getElementById('arena-buyer-model');
+                    const sellerModel = document.getElementById('arena-seller-model');
 
-                    if (data.strategies) {
-                        const html = data.strategies.map(s => `<option value="${s}">${s.charAt(0).toUpperCase() + s.slice(1)}</option>`).join('');
-                        buyerSelect.innerHTML = html;
-                        sellerSelect.innerHTML = html;
-                        arenaB.innerHTML = html;
-                        arenaS.innerHTML = html;
-                    }
+                    const selects = [sidebarModel, buyerModel, sellerModel];
 
-                    if (data.models) {
-                        const modelHtml = data.models.map(m => `<option value="${m}">${m.charAt(0).toUpperCase() + m.slice(1)}</option>`).join('');
-                        arenaBModel.innerHTML = modelHtml;
-                        arenaSModel.innerHTML = modelHtml;
-                    }
+                    selects.forEach(sel => {
+                        if (!sel) return;
+                        sel.innerHTML = '';
+
+                        // Group models by provider
+                        const groups = {};
+                        data.models.forEach(m => {
+                            const [provider, name] = m.includes(':') ? m.split(':') : ['ollama', m];
+                            if (!groups[provider]) groups[provider] = [];
+                            groups[provider].push({ id: m, name: name });
+                        });
+
+                        for (const [provider, models] of Object.entries(groups)) {
+                            const groupEl = document.createElement('optgroup');
+                            groupEl.label = provider.toUpperCase();
+                            models.forEach(model => {
+                                const opt = document.createElement('option');
+                                opt.value = model.id;
+                                opt.textContent = model.name;
+                                groupEl.appendChild(opt);
+                            });
+                            sel.appendChild(groupEl);
+                        }
+                    });
+
+                    // Update other selects (strategy, etc)
+                    populateSelect('cfg-buyer-strategy', data.strategies);
+                    populateSelect('cfg-seller-strategy', data.strategies);
+                    populateSelect('arena-buyer-strategy', data.strategies);
+                    populateSelect('arena-seller-strategy', data.strategies);
 
                     // Set defaults
-                    buyerSelect.value = 'adaptive';
-                    sellerSelect.value = 'adaptive';
-                    arenaB.value = 'aggressive';
-                    arenaS.value = 'balanced';
                     if (data.models && data.models.length > 0) {
-                        arenaBModel.value = data.models[0];
-                        arenaSModel.value = data.models[0];
+                        if (sidebarModel) sidebarModel.value = data.models[0];
+                        if (buyerModel) buyerModel.value = data.models[0];
+                        if (sellerModel) sellerModel.value = data.models[0];
                     }
                 } catch (e) {
-                    console.warn("Failed to load config options dynamically, using defaults.");
+                    console.warn("Failed to load config options dynamically:", e);
                 }
+            }
+
+            function populateSelect(id, options) {
+                const sel = document.getElementById(id);
+                if (!sel || !options) return;
+                sel.innerHTML = '';
+                options.forEach(opt => {
+                    const el = document.createElement('option');
+                    el.value = opt;
+                    el.textContent = opt.charAt(0).toUpperCase() + opt.slice(1);
+                    sel.appendChild(el);
+                });
             }
 
             // ─── Show Simulation ───

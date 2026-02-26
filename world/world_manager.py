@@ -59,7 +59,7 @@ class WorldManager:
                     strategy_name=agent_cfg.strategy.value,
                     risk_prompt=risk_prompt,
                     style_prompt=f"{style_prompt} {strategy_prompt}",
-                    model=config.model_name
+                    model=agent_cfg.model_name or config.model_name
                 )
                 agent._sim_id = sim_id
                 agents.append(agent)
@@ -77,7 +77,7 @@ class WorldManager:
                 strategy_name=config.buyer_config.strategy.value,
                 risk_prompt=buyer_risk,
                 style_prompt=style_prompt,
-                model=config.model_name,
+                model=config.buyer_config.model_name or config.model_name,
             )
             agent_b = LLMSellerAgent(
                 "Bob (LLM Seller)", **seller_params,
@@ -85,7 +85,7 @@ class WorldManager:
                 strategy_name=config.seller_config.strategy.value,
                 risk_prompt=seller_risk,
                 style_prompt=style_prompt,
-                model=config.model_name,
+                model=config.seller_config.model_name or config.model_name,
             )
             agent_a._sim_id = sim_id
             agent_b._sim_id = sim_id

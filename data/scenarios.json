@@ -1,0 +1,24 @@
+[
+    {
+        "id": "supply_chain_alpha",
+        "name": "Supply Chain Alpha",
+        "description": "A high-stakes industrial negotiation for rare earth minerals.",
+        "buyer_max": 200.0,
+        "seller_min": 50.0,
+        "num_vendors": 3,
+        "max_turns": 15,
+        "goal": "minimize_cost",
+        "custom_params": {}
+    },
+    {
+        "id": "industrial_hub",
+        "name": "Industrial Hub",
+        "description": "Custom stakes.",
+        "buyer_max": 300.0,
+        "seller_min": 50.0,
+        "num_vendors": 1,
+        "max_turns": 20,
+        "goal": "maximize_efficiency",
+        "custom_params": {}
+    }
+]

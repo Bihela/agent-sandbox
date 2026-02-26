@@ -119,6 +119,12 @@ This document records decisions made during development, specifically logging ap
 - **Decision**: Added granular Head-to-Head (H2H) tracking for both models and strategies. Built a dedicated Arena UI section with fighter-card selection.
 - **Impact**: Transforms the sandbox from a tool into a benchmark ecosystem, attracting users who want to compare LLM negotiation capabilities.
 
+### 🟢 [Platformization via Scenario Architect]
+- **Date**: 2026-02-26
+- **Context**: The sandbox was a fixed simulator, requiring code changes for new negotiation environments. We needed to enable users to define and deploy custom scenarios without touching the source code.
+- **Decision**: Shifted the sandbox from a fixed simulator to a platform by implementing the `DynamicScenario` engine and `/scenario/create` API. This allows users to design, persist, and deploy custom negotiation environments.
+- **Impact**: The system is now a true research platform. Users can create novel negotiation scenarios, share them, and run experiments on them, greatly expanding the scope of research possible.
+
 ### 🟢 [Global Header Navigation & Layout Refinement]
 - **Date**: 2026-02-26
 - **Context**: The sidebar was becoming extremely cluttered with navigation, parameters, history, and rankings, leading to a poor user experience.
@@ -128,11 +134,19 @@ This document records decisions made during development, specifically logging ap
 
 ---
 
-### 🟢 [Dual-Model Benchmarking & Arena Interactivity]
+### 🟢 [Multi-Provider LLM Integration & Lazy Loading SDKs]
 - **Date**: 2026-02-26
-- **Context**: The Performance Arena only supported comparing strategies on a single model. Users needed to compare capabilities between different foundation models (e.g., Mistral vs Llama 3).
-- **Decision**: Implemented **Dual-Model** selection for the Arena, allowing for direct head-to-head model clashing. Replaced hardcoded placeholders with dynamic model population from the Ollama backend. Added `pointer-events: none` to decorative overlays that were blocking user clicks.
-- **Reasoning (Why rejected)**: Single-model benchmarking was rejected because it limited the scope of negotiation research. Custom dropdown components were rejected in favor of native selectors to ensure 100% click reliability.
-- **Impact**: The Arena is now a true model benchmarking tool, enabling complex comparative analysis of AI negotiation styles across different foundation architectures.
+- **Context**: Relying solely on Ollama limited the sandbox's research potential. We needed to support cloud providers (OpenAI, Gemini, Groq) while maintaining local stability.
+- **Decision**: Developed a pluggable `BaseProvider` architecture with a `ProviderFactory`. Implemented **Lazy Loading** for cloud providers, allowing the backend to start even if `openai` or `google-generativeai` libraries are not installed locally. The system defaults to Ollama if a requested provider is unavailable.
+- **Reasoning (Why rejected)**: Hardcoding cloud SDK imports was rejected because it would break the "zero-setup" local experience for users without those specific Python libraries installed. We chose a "Graceful Degradation" strategy where cloud features stay dormant until dependencies are met.
+- **Impact**: The sandbox is now truly "Model-Multiversal", supporting both local offline research and high-scale cloud-based simulations without compromising on stability.
+
+---
+
+### 🟢 [Independent Arena Model Selection]
+- **Date**: 2026-02-26
+- **Context**: The Performance Arena previously used a single model for both challengers, limiting the ability to compare foundation model capabilities directly.
+- **Decision**: Refactored the Arena UI and Backend to support independent model and provider selection for both the "Buyer Challenger" and the "Seller Defender". Grouped models by provider in the frontend dropdowns for clarity.
+- **Impact**: Enables "Llama vs Gemini" or "Mistral vs GPT-4" clashing, fulfilling the primary requirement for cross-model capability benchmarking.
 
 *(No more entries. Add entries here when evaluating features, dependencies, or architectural choices.)*

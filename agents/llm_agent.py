@@ -1,6 +1,4 @@
-import json
 import time
-import ollama
 from agents.base_agent import Agent
 from agents.strategies import get_strategy
 from telemetry_module.telemetry import tracer, collector
@@ -8,10 +6,20 @@ from telemetry_module.telemetry import tracer, collector
 
 class LLMAgent(Agent):
     def __init__(self, name, role, temperature=0.7, strategy_name="balanced",
-                 risk_prompt="", style_prompt="", model="mistral", **kwargs):
+                 risk_prompt="", style_prompt="", model="mistral", provider_name=None, **kwargs):
         super().__init__(name)
         self.role = role
-        self.model = model
+        
+        # Handle provider extraction from model name or explicit argument
+        if ":" in model and not provider_name:
+            provider_name, self.model = model.split(":", 1)
+        else:
+            self.model = model
+            provider_name = provider_name or "ollama"
+            
+        from agents.providers.provider_factory import ProviderFactory
+        self.provider = ProviderFactory.get_provider(provider_name)
+        
         self.temperature = temperature
         self.strategy = get_strategy(strategy_name)
         self.risk_prompt = risk_prompt
@@ -59,22 +67,23 @@ Respond in EXACT JSON format with no markdown wrappers or other text:
             attributes={
                 "agent.name": self.name,
                 "agent.model": self.model,
+                "agent.provider": type(self.provider).__name__,
                 "agent.temperature": self.temperature,
                 "agent.strategy": self.strategy.name,
                 "negotiation.current_price": str(current_price),
             }
         ) as span:
             try:
-                print(f"DEBUG: [{self.name}] Calling Ollama ({self.model})...")
-                response = ollama.chat(
+                print(f"DEBUG: [{self.name}] Calling {type(self.provider).__name__} ({self.model})...")
+                response_data = self.provider.chat(
                     model=self.model,
                     messages=self.history,
-                    options={"temperature": self.temperature}
+                    temperature=self.temperature
                 )
-                print(f"DEBUG: [{self.name}] Ollama response received.")
+                print(f"DEBUG: [{self.name}] Provider response received.")
 
-                generated_text = response.get("message", {}).get("content", "")
-                tokens_used = response.get("eval_count", 0) + response.get("prompt_eval_count", 0)
+                generated_text = response_data.get("content", "")
+                tokens_used = response_data.get("tokens_used", 0)
 
                 # --- Robust JSON Parsing ---
                 # 1. Strip markdown code blocks

@@ -12,6 +12,7 @@ The Agent Sandbox is a multi-agent system backend built using FastAPI.
 ## Modular Structure
 - `backend/`: FastApi backend core application logic, settings, and main entries.
 - `agents/`: Agent implementations and behaviors.
+  - `agents/providers/`: [NEW] Pluggable LLM provider implementations (Ollama, OpenAI, Gemini, Groq).
 - `world/`: Environment and world state definitions for the agents.
 - `scenarios/`: Specific simulation scenarios and workflows.
 - `metrics/`: Analytics and performance tracking of agent outcomes.
@@ -32,6 +33,8 @@ The Agent Sandbox is a multi-agent system backend built using FastAPI.
   - `POST /simulation/batch`: Runs a specified scenario back-to-back `N` times (e.g., `runs=100`) and returns aggregated analytics (success rate, deadlocks, average turns, average price).
   - `GET /simulation/replay`: Returns all historical runs loaded into memory with their full sequential play-by-play steps.
   - `GET /simulation/{id}`: Retrieves the full history and details of a specific simulation run.
+  - `POST /scenario/create`: [NEW] API for dynamically generating and persisting custom negotiation scenarios.
+  - `GET /scenario/list`: [NEW] Retrieves all available core and user-defined custom scenarios.
 - **Replay System**: Built-in tracking inside `world/world_manager.py` that records the precise agent actions, capturing the actor, turn number, and raw action state in a linear `steps` array, which is then exposed in the API outputs.
 - **Browser UI**: A responsive, vanilla HTML/JS/CSS frontend located in `frontend/index.html`. It is statically mounted and served via FastAPI at the `/play` endpoint. Features include:
   - **Global Command Header**: Centralized navigation for Ecoystem Discovery, Performance Arena, and Intelligence Hub.
@@ -41,11 +44,15 @@ The Agent Sandbox is a multi-agent system backend built using FastAPI.
   - **Design Style**: Premium "Midnight Slate" glassmorphism with emoji-free professional aesthetics and micro-animations.
 - **Agent Implementations**: Multiple types of agents exist in `agents/`, all inheriting from `BaseAgent`.
   - **Rule-based Agents**: `BuyerAgent` and `SellerAgent` capable of deterministic simple negotiation logic (offer, counter, accept).
-  - **LLM-based Agents**: `LLMAgent` located in `agents/llm_agent.py` dynamically builds prompt contexts (price, budget constraints), constructs an action history, and calls the local Ollama inference engine (currently configured to use the `mistral` model). Returns structured ACP-compliant JSON with `sender`, `receiver`, `type`, `price`, and `reasoning` fields. Includes a normalization layer to map legacy terms (e.g., "offer") to the standard protocol.
+  - **LLM-based Agents**: `LLMAgent` located in `agents/llm_agent.py` dynamically builds prompt contexts (price, budget constraints), constructs an action history, and calls the **Provider System** for inference. It is now completely provider-agnostic, supporting both local and cloud-based foundation models. Returns structured ACP-compliant JSON with `sender`, `receiver`, `type`, `price`, and `reasoning` fields. Includes a normalization layer to map legacy terms (e.g., "offer") to the standard protocol.
   - **Runtime Execution**: The `world_manager.py` defaults to running `LLMBuyerAgent` and `LLMSellerAgent` to demonstrate the active AI capabilities.
 - **Mediator Engine**: Enforces simulation logic in `world/mediator.py`. Crucially, this remains **strictly rule-based**. Even when LLMs propose actions, the Mediator validates formats, halts infinite loops, and acts as the unbribable referee before the World Manager executes state changes.
 - **Failure Detection Engine**: A research-grade failure taxonomy system in `metrics/failure_detector.py` that performs post-simulation analysis across 5 failure categories: `loop_failure` (identical/stagnant prices), `deadlock` (diverging price gaps), `irrational_concession` (agents acting against own interests), `invalid_action` (malformed messages), and `protocol_violation` (rule-breaking sequences). Produces a risk score (0-100) and detailed per-turn failure cards displayed in the frontend.
-- **Simulation Config System**: `configs/simulation_config.py` provides a Pydantic-based configuration model (`SimulationConfig`) with per-agent `AgentConfig` for strategy (`aggressive/cooperative/analytical/adaptive`), risk level (`low/medium/high`), LLM temperature (0-2), negotiation style (`formal/casual/competitive/collaborative`), and model selection. Config values are injected into LLM prompts as behavioral modifiers and included as a snapshot in simulation output. Frontend exposes collapsible Advanced Config controls.
+- **Multi-Provider LLM System**: [NEW] A pluggable architecture in `agents/providers/` that abstracts LLM interactions.
+  - `BaseProvider`: Defines a standard chat interface and model discovery.
+  - `ProviderFactory`: Manages lazy-loading of providers, ensuring the system remains stable even if cloud SDKs (OpenAI, Gemini) are missing.
+  - **Supported Backends**: Ollama (local), OpenAI, Google Gemini, and Groq (high-speed).
+- **Simulation Config System**: `configs/simulation_config.py` provides a Pydantic-based configuration model (`SimulationConfig`) with per-agent `AgentConfig` for strategy (`aggressive/cooperative/analytical/adaptive`), risk level (`low/medium/high`), LLM temperature (0-2), negotiation style (`formal/casual/competitive/collaborative`), and model selection (prefixed with provider, e.g., `openai:gpt-4o`). Config values are injected into LLM prompts as behavioral modifiers and included as a snapshot in simulation output. Frontend exposes collapsible Advanced Config controls.
 - **OpenTelemetry Logging System**: `telemetry_module/telemetry.py` provides research-grade structured telemetry using OpenTelemetry SDK. Tracks decision latency (per-agent, avg, P95, max), token usage, model errors/fallbacks, and negotiation complexity scores. `TelemetryCollector` aggregates per-simulation and global metrics. Exposed via `/telemetry` API endpoint and rendered in the frontend's 📡 Telemetry panel with latency bar visualizations.
 - **Agent Strategy System**: Pluggable strategy modules in `agents/strategies/` with `BaseStrategy` abstract class, three implementations (aggressive 5% concession, balanced 10%, conservative 20%), and a registry with aliases. Strategies provide both LLM system prompts and programmatic fallback logic, replacing the previous hardcoded fallback. Enables strategy experiments from the UI.
 - **Dataset Export System**: `metrics/dataset_exporter.py` flattens simulation replays into tabular rows (one per decision step) with 20 columns spanning simulation metadata, config, failure analysis, telemetry, and per-step actions. Exposed via `GET /dataset/export?format=json|csv`. Frontend sidebar has JSON/CSV download buttons. Turns the sandbox into a negotiation dataset generator.
@@ -61,7 +68,11 @@ The Agent Sandbox is a multi-agent system backend built using FastAPI.
   - `SimulationWorker`: Background thread that processes jobs from the queue sequentially.
   - Endpoints: `POST /simulation/schedule`, `GET /queue/status`, `GET /queue/recent`.
 - **Performance Arena**: A competitive benchmarking mode with a "Versus" clashing layout.
-  - **Dual-Model Benchmarking**: Supports **Model A vs Model B** clashing, allowing for direct cross-model negotiation capability analysis.
-  - **Per-Fighter Config**: Isolated strategy, risk, and model configuration panels for each challenger.
+  - **Model vs Model**: Supports independent foundation model selection for both Buyer and Seller, enabling direct cross-model and cross-provider benchmarking.
+  - **Per-Fighter Config**: Isolated strategy, risk, model, and provider configuration panels for each challenger.
   - **Competitive Metrics**: Tracks Strategy-vs-Strategy and Model-vs-Model win rates via the Intelligence Hub.
+- **Scenario Architect System**: A platform-tier feature enabling the dynamic design of negotiation environments.
+  - **Dynamic Engine**: `scenarios/dynamic_scenario.py` provides a polymorphic container for runtime parameters (agent count, constraints, goals).
+  - **Architect UI**: A full-screen dashboard tab in the frontend for visual scenario design and one-click deployment.
+  - **Persistent Storage**: `data/scenarios.json` acts as the user's private library of custom-built research environments.
 

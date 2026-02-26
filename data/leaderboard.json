@@ -7,9 +7,9 @@
       "concessions": 0
     },
     "balanced": {
-      "runs": 15,
+      "runs": 17,
       "agreements": 0,
-      "total_turns": 113,
+      "total_turns": 117,
       "concessions": 0
     },
     "conservative": {
@@ -19,20 +19,25 @@
       "concessions": 0
     },
     "adaptive": {
-      "runs": 8,
+      "runs": 12,
       "agreements": 0,
-      "total_turns": 76,
+      "total_turns": 84,
       "concessions": 0
+    },
+    "analytical": {
+      "runs": 2,
+      "agreements": 0,
+      "total_turns": 4
     }
   },
   "models": {
     "mistral": {
-      "runs": 25,
+      "runs": 29,
       "agreements": 0,
-      "avg_latency_ms": 9414.868000000002
+      "avg_latency_ms": 8629.820689655173
     }
   },
-  "last_updated": "2026-02-26T22:51:56.060646",
+  "last_updated": "2026-02-27T00:07:42.895232",
   "h2h_strategies": {
     "aggressive_vs_balanced": {
       "runs": 5,
@@ -40,6 +45,14 @@
     },
     "conservative_vs_balanced": {
       "runs": 1,
+      "agreements": 0
+    },
+    "adaptive_vs_balanced": {
+      "runs": 2,
+      "agreements": 0
+    },
+    "adaptive_vs_analytical": {
+      "runs": 2,
       "agreements": 0
     }
   },
