@@ -4,227 +4,464 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agent Sandbox UI</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <title>Agent Sandbox – Simulation Visualizer</title>
+    <meta name="description"
+        content="Watch autonomous AI agents negotiate in real-time with advanced analytics, price graphs, and decision timelines.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
     <style>
         :root {
-            --bg: #0f172a;
-            --surface: #1e293b;
-            --primary: #3b82f6;
-            --primary-hover: #2563eb;
-            --text: #f8fafc;
-            --text-muted: #94a3b8;
-            --border: #334155;
+            --bg: #0a0e1a;
+            --surface: #111827;
+            --surface-2: #1a2236;
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.25);
+            --primary-hover: #4f46e5;
+            --text: #f1f5f9;
+            --text-muted: #64748b;
+            --text-dim: #475569;
+            --border: #1e293b;
             --accent: #10b981;
+            --accent-glow: rgba(16, 185, 129, 0.2);
             --danger: #ef4444;
+            --danger-glow: rgba(239, 68, 68, 0.15);
+            --warning: #f59e0b;
+            --warning-glow: rgba(245, 158, 11, 0.15);
+            --buyer-color: #38bdf8;
+            --seller-color: #f472b6;
+            --radius: 12px;
+            --radius-sm: 8px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', -apple-system, sans-serif;
             background-color: var(--bg);
             color: var(--text);
-            margin: 0;
-            padding: 0;
             display: flex;
             height: 100vh;
             overflow: hidden;
         }
 
-        /* Layout */
+        /* ─── Sidebar ─── */
         #sidebar {
-            width: 320px;
+            width: 340px;
+            min-width: 340px;
             background: var(--surface);
             border-right: 1px solid var(--border);
             display: flex;
             flex-direction: column;
-            padding: 20px;
-            overflow-y: auto;
+            overflow: hidden;
         }
 
-        #main {
-            flex: 1;
-            padding: 30px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            background: radial-gradient(circle at top right, #1e293b, #0f172a);
+        .sidebar-header {
+            padding: 24px 20px 16px;
+            border-bottom: 1px solid var(--border);
         }
 
-        h1,
-        h2,
-        h3 {
-            margin: 0;
-            font-weight: 600;
+        .sidebar-header h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), #a78bfa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.3px;
         }
 
-        h1 {
-            font-size: 1.5rem;
-            margin-bottom: 20px;
-            color: var(--primary);
+        .sidebar-header .subtitle {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-top: 4px;
         }
 
         /* Controls */
-        .control-group {
-            margin-bottom: 20px;
-            padding-bottom: 20px;
+        .controls {
+            padding: 16px 20px;
             border-bottom: 1px solid var(--border);
+        }
+
+        .controls h3 {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--text-dim);
+            margin-bottom: 12px;
+            font-weight: 600;
         }
 
         .input-row {
             display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
+            gap: 8px;
+            margin-bottom: 12px;
         }
 
-        .input-row input {
-            background: rgba(0, 0, 0, 0.2);
+        .input-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .input-group label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-dim);
+            font-weight: 500;
+        }
+
+        .input-group input {
+            background: rgba(0, 0, 0, 0.3);
             border: 1px solid var(--border);
-            color: white;
-            padding: 8px 12px;
-            border-radius: 6px;
-            width: 100%;
+            color: var(--text);
+            padding: 8px 10px;
+            border-radius: var(--radius-sm);
+            font-size: 0.85rem;
+            font-family: inherit;
             outline: none;
-            transition: border 0.2s;
+            transition: border 0.2s, box-shadow 0.2s;
         }
 
-        .input-row input:focus {
+        .input-group input:focus {
             border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow);
         }
 
-        button {
-            background: var(--primary);
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            background: linear-gradient(135deg, var(--primary), #7c3aed);
             color: white;
             border: none;
             padding: 10px 16px;
-            border-radius: 6px;
+            border-radius: var(--radius-sm);
             font-weight: 600;
+            font-size: 0.85rem;
             cursor: pointer;
             width: 100%;
             transition: all 0.2s ease;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            font-family: inherit;
+            position: relative;
+            overflow: hidden;
         }
 
-        button:hover {
-            background: var(--primary-hover);
+        .btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, transparent, rgba(255, 255, 255, 0.1));
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover::after {
+            opacity: 1;
+        }
+
+        .btn:hover {
             transform: translateY(-1px);
+            box-shadow: 0 4px 15px var(--primary-glow);
         }
 
-        button.secondary {
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn.secondary {
             background: transparent;
             border: 1px solid var(--border);
-            margin-top: 10px;
+            margin-top: 8px;
+            font-weight: 500;
         }
 
-        button.secondary:hover {
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        /* History List */
-        .history-item {
+        .btn.secondary:hover {
             background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 12px;
+            border-color: var(--text-dim);
+            box-shadow: none;
+        }
+
+        .btn.loading-btn {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        /* History */
+        .history-section {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 20px 20px;
+        }
+
+        .history-section h3 {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--text-dim);
             margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .history-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 10px 12px;
+            margin-bottom: 6px;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.15s ease;
         }
 
         .history-item:hover {
-            background: rgba(255, 255, 255, 0.08);
+            background: rgba(99, 102, 241, 0.06);
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        .history-item.active {
             border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.08);
         }
 
         .history-item .id {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            margin-bottom: 4px;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            font-family: monospace;
         }
 
         .history-item .meta {
             display: flex;
             justify-content: space-between;
-            font-size: 0.85rem;
+            align-items: center;
+            font-size: 0.8rem;
+            margin-top: 4px;
         }
 
-        .status {
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            font-weight: bold;
+        /* Status Badges */
+        .badge {
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.65rem;
+            font-weight: 700;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        .status.agreement {
-            background: rgba(16, 185, 129, 0.2);
+        .badge.success,
+        .badge.agreement {
+            background: var(--accent-glow);
             color: var(--accent);
         }
 
-        .status.timeout {
-            background: rgba(239, 68, 68, 0.2);
+        .badge.timeout {
+            background: var(--warning-glow);
+            color: var(--warning);
+        }
+
+        .badge.error,
+        .badge.failure {
+            background: var(--danger-glow);
             color: var(--danger);
         }
 
-        /* Main View */
+        .badge.ongoing {
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--primary);
+        }
+
+        /* ─── Main Panel ─── */
+        #main {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            background:
+                radial-gradient(ellipse at 20% 0%, rgba(99, 102, 241, 0.06), transparent 50%),
+                radial-gradient(ellipse at 80% 100%, rgba(16, 185, 129, 0.04), transparent 50%),
+                var(--bg);
+        }
+
+        /* Welcome */
+        #welcome-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            text-align: center;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .welcome-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-glow), rgba(124, 58, 237, 0.15));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin-bottom: 20px;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        #welcome-state h2 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        #welcome-state p {
+            color: var(--text-muted);
+            max-width: 400px;
+            line-height: 1.5;
+        }
+
+        /* Glass Panels */
         .glass-panel {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            background: rgba(17, 24, 39, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: var(--radius);
+            padding: 20px 24px;
             animation: fadeIn 0.4s ease-out forwards;
         }
 
-        .summary-grid {
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .panel-header h2 {
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .panel-header h3 {
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        /* ─── Metrics Grid ─── */
+        .metrics-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
         }
 
-        .summary-card {
-            background: rgba(0, 0, 0, 0.2);
-            padding: 15px;
-            border-radius: 8px;
+        .metric-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 14px 16px;
             text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.2s;
         }
 
-        .summary-card span {
-            display: block;
-            font-size: 0.8rem;
-            color: var(--text-muted);
+        .metric-card:hover {
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+        }
+
+        .metric-card.primary::before {
+            background: linear-gradient(90deg, var(--primary), #a78bfa);
+        }
+
+        .metric-card.success::before {
+            background: linear-gradient(90deg, var(--accent), #34d399);
+        }
+
+        .metric-card.warning::before {
+            background: linear-gradient(90deg, var(--warning), #fbbf24);
+        }
+
+        .metric-card.danger::before {
+            background: linear-gradient(90deg, var(--danger), #f87171);
+        }
+
+        .metric-label {
+            font-size: 0.65rem;
             text-transform: uppercase;
             letter-spacing: 1px;
+            color: var(--text-dim);
+            font-weight: 500;
+            margin-bottom: 6px;
         }
 
-        .summary-card strong {
+        .metric-value {
             font-size: 1.5rem;
-            display: block;
-            margin-top: 5px;
+            font-weight: 700;
         }
 
-        /* Timeline */
+        .metric-card.primary .metric-value {
+            color: #a78bfa;
+        }
+
+        .metric-card.success .metric-value {
+            color: var(--accent);
+        }
+
+        .metric-card.warning .metric-value {
+            color: var(--warning);
+        }
+
+        .metric-card.danger .metric-value {
+            color: var(--danger);
+        }
+
+        .metric-sub {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+
+        /* ─── Chart ─── */
+        .chart-container {
+            position: relative;
+            height: 220px;
+            width: 100%;
+        }
+
+        /* ─── Decision Timeline ─── */
         .timeline {
             position: relative;
-            padding-left: 30px;
-            margin-top: 20px;
+            padding-left: 32px;
         }
 
         .timeline::before {
             content: '';
             position: absolute;
-            left: 7px;
+            left: 9px;
             top: 0;
             bottom: 0;
             width: 2px;
-            background: var(--border);
+            background: linear-gradient(180deg, var(--primary), var(--accent));
+            opacity: 0.3;
         }
 
         .timeline-step {
             position: relative;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
             animation: slideIn 0.3s ease-out forwards;
             opacity: 0;
         }
@@ -232,56 +469,251 @@
         .timeline-step::before {
             content: '';
             position: absolute;
-            left: -28px;
-            top: 5px;
-            width: 12px;
-            height: 12px;
+            left: -30px;
+            top: 12px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
-            background: var(--primary);
             border: 2px solid var(--bg);
         }
 
-        .timeline-step .turn {
-            font-size: 0.75rem;
-            color: var(--primary);
-            font-weight: bold;
-            text-transform: uppercase;
+        .timeline-step.buyer::before {
+            background: var(--buyer-color);
+            box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
         }
 
-        .timeline-step .content {
-            background: rgba(255, 255, 255, 0.03);
+        .timeline-step.seller::before {
+            background: var(--seller-color);
+            box-shadow: 0 0 8px rgba(244, 114, 182, 0.4);
+        }
+
+        .step-card {
+            background: rgba(255, 255, 255, 0.02);
             border: 1px solid var(--border);
-            padding: 12px;
-            border-radius: 8px;
-            margin-top: 5px;
+            border-radius: var(--radius-sm);
+            padding: 12px 14px;
+            transition: border-color 0.15s;
         }
 
-        .actor {
-            font-weight: bold;
-            color: #cbd5e1;
+        .step-card:hover {
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .turn-label {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-dim);
+        }
+
+        .agent-name {
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .agent-name.buyer {
+            color: var(--buyer-color);
+        }
+
+        .agent-name.seller {
+            color: var(--seller-color);
         }
 
         .action-tag {
             display: inline-block;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            margin-left: 8px;
-            color: #93c5fd;
+            background: rgba(255, 255, 255, 0.06);
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: #c4b5fd;
+        }
+
+        .action-tag.accept {
+            background: var(--accent-glow);
+            color: var(--accent);
+        }
+
+        .action-tag.reject {
+            background: var(--danger-glow);
+            color: var(--danger);
         }
 
         .action-price {
             color: var(--accent);
-            font-weight: 600;
-            margin-left: 8px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-left: auto;
         }
 
-        /* Animations */
+        .step-reasoning {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-top: 6px;
+            padding-top: 6px;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            font-style: italic;
+            line-height: 1.4;
+        }
+
+        .step-reasoning::before {
+            content: '💭 ';
+        }
+
+        /* ─── Failure Analysis Panel ─── */
+        .failure-panel {
+            border: 1px solid rgba(239, 68, 68, 0.15);
+        }
+
+        .risk-score-container {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+            padding: 14px 16px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: var(--radius-sm);
+        }
+
+        .risk-gauge {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .risk-gauge.low {
+            background: var(--accent-glow);
+            color: var(--accent);
+            border: 2px solid var(--accent);
+        }
+
+        .risk-gauge.medium {
+            background: var(--warning-glow);
+            color: var(--warning);
+            border: 2px solid var(--warning);
+        }
+
+        .risk-gauge.high {
+            background: var(--danger-glow);
+            color: var(--danger);
+            border: 2px solid var(--danger);
+        }
+
+        .risk-summary {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .risk-summary strong {
+            color: var(--text);
+        }
+
+        .failure-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .failure-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: var(--radius-sm);
+            border-left: 3px solid;
+            font-size: 0.8rem;
+            animation: slideIn 0.25s ease-out forwards;
+            opacity: 0;
+        }
+
+        .failure-card.severity-high {
+            background: rgba(239, 68, 68, 0.06);
+            border-left-color: var(--danger);
+        }
+
+        .failure-card.severity-medium {
+            background: rgba(245, 158, 11, 0.06);
+            border-left-color: var(--warning);
+        }
+
+        .failure-card.severity-low {
+            background: rgba(99, 102, 241, 0.06);
+            border-left-color: var(--primary);
+        }
+
+        .failure-icon {
+            font-size: 1rem;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .failure-details {
+            flex: 1;
+        }
+
+        .failure-meta {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 3px;
+        }
+
+        .failure-type-tag {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 1px 6px;
+            border-radius: 4px;
+        }
+
+        .failure-type-tag.high {
+            background: var(--danger-glow);
+            color: var(--danger);
+        }
+
+        .failure-type-tag.medium {
+            background: var(--warning-glow);
+            color: var(--warning);
+        }
+
+        .failure-type-tag.low {
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--primary);
+        }
+
+        .failure-turn {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+        }
+
+        .failure-desc {
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        /* ─── Animations ─── */
         @keyframes fadeIn {
             from {
                 opacity: 0;
-                transform: translateY(10px);
+                transform: translateY(8px);
             }
 
             to {
@@ -293,7 +725,7 @@
         @keyframes slideIn {
             from {
                 opacity: 0;
-                transform: translateX(-10px);
+                transform: translateX(-8px);
             }
 
             to {
@@ -302,24 +734,132 @@
             }
         }
 
-        /* Utilities */
+        /* ─── Scrollbar ─── */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-dim);
+        }
+
+        /* ─── Utilities ─── */
         .hidden {
             display: none !important;
         }
 
-        .loading {
-            animation: pulse 1.5s infinite;
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
         }
 
-        @keyframes pulse {
+        /* ─── Config Controls ─── */
+        .config-toggle {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            padding: 6px 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: color 0.2s;
+            user-select: none;
+        }
 
-            0%,
-            100% {
-                opacity: 1;
+        .config-toggle:hover {
+            color: var(--text-muted);
+        }
+
+        .config-section {
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border);
+        }
+
+        .config-section.open {
+            display: flex;
+        }
+
+        .config-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .config-group {
+            flex: 1;
+        }
+
+        .config-group label {
+            display: block;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-dim);
+            margin-bottom: 3px;
+        }
+
+        .config-group select,
+        .config-group input[type="range"] {
+            width: 100%;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text);
+            font-size: 0.75rem;
+            padding: 5px 8px;
+            outline: none;
+        }
+
+        .config-group select:focus {
+            border-color: var(--primary);
+        }
+
+        .config-group select option {
+            background: var(--bg-sidebar);
+            color: var(--text);
+        }
+
+        .temp-display {
+            font-size: 0.7rem;
+            color: var(--primary);
+            text-align: right;
+        }
+
+        .config-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 4px;
+        }
+
+        .config-tag {
+            font-size: 0.6rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        @media (max-width: 1200px) {
+            .two-col {
+                grid-template-columns: 1fr;
             }
 
-            50% {
-                opacity: 0.5;
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
             }
         }
     </style>
@@ -327,109 +867,312 @@
 
 <body>
 
+    <!-- ═══ Sidebar ═══ -->
     <div id="sidebar">
-        <h1>Agent Sandbox</h1>
-
-        <div class="control-group">
-            <h3>New Simulation</h3>
-            <div class="input-row" style="margin-top:10px;">
-                <input type="number" id="buyer-max" placeholder="Buyer Max (e.g. 150)" value="150">
-                <input type="number" id="seller-min" placeholder="Seller Min (e.g. 100)" value="100">
-            </div>
-            <button onclick="startSimulation()">Start Run</button>
-            <button class="secondary" onclick="loadHistory()">Refresh History</button>
+        <div class="sidebar-header">
+            <h1>⚡ Agent Sandbox</h1>
+            <div class="subtitle">Multi-Agent Negotiation Simulator</div>
         </div>
 
-        <div id="history-container">
-            <!-- Items injected by JS -->
-            <div style="color: var(--text-muted); font-size: 0.85rem; text-align: center;">Loading history...</div>
+        <div class="controls">
+            <h3>New Simulation</h3>
+            <div class="input-row">
+                <div class="input-group">
+                    <label>Buyer Max $</label>
+                    <input type="number" id="buyer-max" value="150">
+                </div>
+                <div class="input-group">
+                    <label>Seller Min $</label>
+                    <input type="number" id="seller-min" value="100">
+                </div>
+            </div>
+            <button class="btn" id="start-btn" onclick="startSimulation()">
+                <span id="start-btn-text">▶ Start Simulation</span>
+            </button>
+            <button class="btn secondary" onclick="loadHistory()">↻ Refresh History</button>
+
+            <div class="config-toggle" onclick="toggleConfig()">
+                <span id="config-arrow">▶</span> Advanced Config
+            </div>
+
+            <div class="config-section" id="config-section">
+                <div class="config-row">
+                    <div class="config-group">
+                        <label>Style</label>
+                        <select id="cfg-style">
+                            <option value="formal">Formal</option>
+                            <option value="casual">Casual</option>
+                            <option value="competitive">Competitive</option>
+                            <option value="collaborative">Collaborative</option>
+                        </select>
+                    </div>
+                    <div class="config-group">
+                        <label>Temperature</label>
+                        <input type="range" id="cfg-temp" min="0" max="2" step="0.1" value="0.7"
+                            oninput="document.getElementById('temp-val').textContent=this.value">
+                        <div class="temp-display" id="temp-val">0.7</div>
+                    </div>
+                </div>
+                <div class="config-row">
+                    <div class="config-group">
+                        <label>Buyer Strategy</label>
+                        <select id="cfg-buyer-strategy">
+                            <option value="adaptive">Adaptive</option>
+                            <option value="aggressive">Aggressive</option>
+                            <option value="cooperative">Cooperative</option>
+                            <option value="analytical">Analytical</option>
+                        </select>
+                    </div>
+                    <div class="config-group">
+                        <label>Buyer Risk</label>
+                        <select id="cfg-buyer-risk">
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                            <option value="high">High</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="config-row">
+                    <div class="config-group">
+                        <label>Seller Strategy</label>
+                        <select id="cfg-seller-strategy">
+                            <option value="adaptive">Adaptive</option>
+                            <option value="aggressive">Aggressive</option>
+                            <option value="cooperative">Cooperative</option>
+                            <option value="analytical">Analytical</option>
+                        </select>
+                    </div>
+                    <div class="config-group">
+                        <label>Seller Risk</label>
+                        <select id="cfg-seller-risk">
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                            <option value="high">High</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="history-section">
+            <h3>Past Runs</h3>
+            <div id="history-container">
+                <div style="color: var(--text-dim); font-size: 0.8rem; text-align: center; padding: 20px 0;">Loading...
+                </div>
+            </div>
         </div>
     </div>
 
+    <!-- ═══ Main Content ═══ -->
     <div id="main">
-        <div id="welcome-state" class="glass-panel" style="text-align: center; margin: auto;">
-            <h2 style="font-size: 2rem; margin-bottom: 10px;">Select or Start a Simulation</h2>
-            <p style="color: var(--text-muted);">Watch autonomous agents negotiate in real-time.</p>
+
+        <!-- Welcome State -->
+        <div id="welcome-state">
+            <div class="welcome-icon">🤖</div>
+            <h2>Select or Start a Simulation</h2>
+            <p>Watch autonomous AI agents negotiate in real-time. Analyze pricing strategies, decision patterns, and
+                negotiation efficiency.</p>
         </div>
 
+        <!-- Simulation View (hidden by default) -->
         <div id="simulation-view" class="hidden">
-            <div class="glass-panel mb-20">
-                <h2 style="margin-bottom:20px; display:flex; justify-content: space-between; align-items: center;">
-                    Simulation Results
-                    <span id="sim-status-badge" class="status"></span>
-                </h2>
 
-                <div class="summary-grid">
-                    <div class="summary-card"><span>Total Turns</span><strong id="sim-turns">-</strong></div>
-                    <div class="summary-card"><span>Final Price</span><strong id="sim-price">-</strong></div>
-                    <div class="summary-card"><span>Reason</span><strong id="sim-reason"
-                            style="font-size:1rem; color:var(--text-muted);">-</strong></div>
+            <!-- Metrics Panel -->
+            <div class="glass-panel" id="metrics-panel">
+                <div class="panel-header">
+                    <h2>📊 Simulation Metrics</h2>
+                    <span id="sim-status-badge" class="badge"></span>
+                </div>
+                <div class="config-tags" id="config-display"></div>
+                <div class="metrics-grid">
+                    <div class="metric-card primary">
+                        <div class="metric-label">Total Turns</div>
+                        <div class="metric-value" id="m-turns">–</div>
+                        <div class="metric-sub" id="m-turns-sub"></div>
+                    </div>
+                    <div class="metric-card success">
+                        <div class="metric-label">Final Price</div>
+                        <div class="metric-value" id="m-price">–</div>
+                        <div class="metric-sub" id="m-price-sub"></div>
+                    </div>
+                    <div class="metric-card warning">
+                        <div class="metric-label">Efficiency</div>
+                        <div class="metric-value" id="m-efficiency">–</div>
+                        <div class="metric-sub">turns vs max</div>
+                    </div>
+                    <div class="metric-card danger">
+                        <div class="metric-label">Loop Risk</div>
+                        <div class="metric-value" id="m-loop">–</div>
+                        <div class="metric-sub" id="m-loop-sub"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chart + Aggregate Stats -->
+            <div class="two-col">
+                <!-- Price Over Time Graph -->
+                <div class="glass-panel">
+                    <div class="panel-header">
+                        <h3>📈 Price Over Time</h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="priceChart"></canvas>
+                    </div>
                 </div>
 
-                <h3>Replay Timeline</h3>
+                <!-- Aggregate Stats -->
+                <div class="glass-panel" id="aggregate-panel">
+                    <div class="panel-header">
+                        <h3>🏆 Session Analytics</h3>
+                    </div>
+                    <div class="metrics-grid" style="grid-template-columns: 1fr 1fr;">
+                        <div class="metric-card success">
+                            <div class="metric-label">Success Rate</div>
+                            <div class="metric-value" id="a-success-rate">–</div>
+                        </div>
+                        <div class="metric-card primary">
+                            <div class="metric-label">Total Runs</div>
+                            <div class="metric-value" id="a-total-runs">–</div>
+                        </div>
+                        <div class="metric-card warning">
+                            <div class="metric-label">Avg Turns</div>
+                            <div class="metric-value" id="a-avg-turns">–</div>
+                        </div>
+                        <div class="metric-card danger">
+                            <div class="metric-label">Deadlocks</div>
+                            <div class="metric-value" id="a-deadlocks">–</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Failure Analysis Panel -->
+            <div class="glass-panel failure-panel hidden" id="failure-panel">
+                <div class="panel-header">
+                    <h2>🚨 Failure Analysis</h2>
+                </div>
+                <div id="risk-score-area" class="risk-score-container"></div>
+                <div id="failure-cards-container" class="failure-cards"></div>
+            </div>
+
+            <!-- Decision Timeline -->
+            <div class="glass-panel">
+                <div class="panel-header">
+                    <h2>🕒 Decision Timeline</h2>
+                </div>
                 <div id="timeline-container" class="timeline">
                     <!-- Steps injected by JS -->
                 </div>
             </div>
+
         </div>
     </div>
 
     <script>
         const API_BASE = window.location.origin;
+        let priceChart = null;
+        let activeSimId = null;
 
         document.addEventListener('DOMContentLoaded', () => {
             loadHistory();
         });
 
+        function toggleConfig() {
+            const section = document.getElementById('config-section');
+            const arrow = document.getElementById('config-arrow');
+            section.classList.toggle('open');
+            arrow.textContent = section.classList.contains('open') ? '▼' : '▶';
+        }
+
+        // ─── History ───
         async function loadHistory() {
             const container = document.getElementById('history-container');
-            container.innerHTML = '<div class="loading" style="text-align:center;">Fetching...</div>';
-
+            container.innerHTML = '<div style="color:var(--text-dim);font-size:0.8rem;text-align:center;padding:20px 0;">Loading...</div>';
             try {
                 const res = await fetch(`${API_BASE}/simulation/replay`);
                 const json = await res.json();
-                renderHistory(json.data.reverse()); // Show newest first
+                renderHistory(json.data.reverse());
+                updateAggregateStats(json.data);
             } catch (e) {
-                container.innerHTML = '<div style="color:var(--danger)">Failed to load history</div>';
+                container.innerHTML = '<div style="color:var(--danger);font-size:0.8rem;text-align:center;">Failed to load</div>';
             }
         }
 
         function renderHistory(runs) {
             const container = document.getElementById('history-container');
             if (!runs || runs.length === 0) {
-                container.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; text-align: center;">No simulations run yet.</div>';
+                container.innerHTML = '<div style="color:var(--text-dim);font-size:0.8rem;text-align:center;padding:20px 0;">No simulations yet. Start one above!</div>';
                 return;
             }
-
             container.innerHTML = '';
             runs.forEach(run => {
                 const el = document.createElement('div');
-                el.className = 'history-item';
+                el.className = 'history-item' + (run.simulation_id === activeSimId ? ' active' : '');
+                el.id = `hist-${run.simulation_id}`;
                 el.onclick = () => showSimulation(run);
-
-                const shortId = run.simulation_id.split('-')[0];
-                const priceStr = run.final_price ? `Price: $${run.final_price.toFixed(2)}` : 'No Agreement';
-
+                const shortId = run.simulation_id.substring(0, 8);
                 el.innerHTML = `
-                    <div class="id">ID: ${shortId}...</div>
+                    <div class="id">${shortId}</div>
                     <div class="meta">
-                        <span class="status ${run.status}">${run.status}</span>
-                        <span>${run.turns} turns</span>
+                        <span class="badge ${run.status}">${run.status}</span>
+                        <span style="color:var(--text-muted)">${run.turns} turns</span>
+                        <span style="color:var(--accent);font-weight:600">${run.final_price ? '$' + run.final_price.toFixed(0) : '—'}</span>
                     </div>
                 `;
                 container.appendChild(el);
             });
         }
 
+        // ─── Aggregate Stats ───
+        function updateAggregateStats(runs) {
+            if (!runs || runs.length === 0) return;
+            const total = runs.length;
+            const agreements = runs.filter(r => r.status === 'agreement' || r.status === 'success').length;
+            const deadlocks = runs.filter(r => r.status === 'error' || r.status === 'failure').length;
+            const avgTurns = (runs.reduce((a, r) => a + r.turns, 0) / total).toFixed(1);
+            const successRate = ((agreements / total) * 100).toFixed(0);
+
+            document.getElementById('a-success-rate').textContent = successRate + '%';
+            document.getElementById('a-total-runs').textContent = total;
+            document.getElementById('a-avg-turns').textContent = avgTurns;
+            document.getElementById('a-deadlocks').textContent = deadlocks;
+        }
+
+        // ─── Start Simulation ───
         async function startSimulation() {
+            const btn = document.getElementById('start-btn');
+            const btnText = document.getElementById('start-btn-text');
             const bMax = parseFloat(document.getElementById('buyer-max').value) || 150;
             const sMin = parseFloat(document.getElementById('seller-min').value) || 100;
+
+            btn.classList.add('loading-btn');
+            btnText.textContent = '⏳ Running...';
+
+            // Gather config
+            const config = {
+                negotiation_style: document.getElementById('cfg-style').value,
+                temperature: parseFloat(document.getElementById('cfg-temp').value),
+                buyer_config: {
+                    strategy: document.getElementById('cfg-buyer-strategy').value,
+                    risk_level: document.getElementById('cfg-buyer-risk').value,
+                    temperature: parseFloat(document.getElementById('cfg-temp').value),
+                },
+                seller_config: {
+                    strategy: document.getElementById('cfg-seller-strategy').value,
+                    risk_level: document.getElementById('cfg-seller-risk').value,
+                    temperature: parseFloat(document.getElementById('cfg-temp').value),
+                },
+            };
 
             try {
                 const res = await fetch(`${API_BASE}/simulation/start`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ buyer_max: bMax, seller_min: sMin })
+                    body: JSON.stringify({
+                        buyer_max: bMax,
+                        seller_min: sMin,
+                        ...config,
+                    })
                 });
                 const json = await res.json();
                 if (json.status === "success") {
@@ -437,50 +1180,297 @@
                     loadHistory();
                 }
             } catch (e) {
-                alert("Failed to start simulation.");
+                console.error("Simulation error:", e);
+            } finally {
+                btn.classList.remove('loading-btn');
+                btnText.textContent = '▶ Start Simulation';
             }
         }
 
+        // ─── Show Simulation ───
         function showSimulation(run) {
+            activeSimId = run.simulation_id;
             document.getElementById('welcome-state').classList.add('hidden');
             document.getElementById('simulation-view').classList.remove('hidden');
 
-            // Header stats
+            // Highlight active history item
+            document.querySelectorAll('.history-item').forEach(el => el.classList.remove('active'));
+            const activeEl = document.getElementById(`hist-${run.simulation_id}`);
+            if (activeEl) activeEl.classList.add('active');
+
+            // Status badge
             const badge = document.getElementById('sim-status-badge');
             badge.textContent = run.status;
-            badge.className = `status ${run.status}`;
+            badge.className = `badge ${run.status}`;
 
-            document.getElementById('sim-turns').textContent = run.turns;
-            document.getElementById('sim-price').textContent = run.final_price ? `$${run.final_price.toFixed(2)}` : 'N/A';
-            document.getElementById('sim-reason').textContent = run.reason || 'Completed';
-
-            // Timeline
-            const timeline = document.getElementById('timeline-container');
-            timeline.innerHTML = '';
-
-            if (run.steps && run.steps.length > 0) {
-                run.steps.forEach((step, index) => {
-                    const stepEl = document.createElement('div');
-                    stepEl.className = 'timeline-step';
-                    stepEl.style.animationDelay = `${index * 0.05}s`;
-
-                    const priceText = (typeof step.action.price === 'number')
-                        ? `<span class="action-price">$${step.action.price.toFixed(2)}</span>`
-                        : '';
-
-                    stepEl.innerHTML = `
-                        <div class="turn">Turn ${step.turn}</div>
-                        <div class="content">
-                            <span class="actor">${step.agent}</span>
-                            <span class="action-tag">${step.action.action}</span>
-                            ${priceText}
-                        </div>
-                    `;
-                    timeline.appendChild(stepEl);
-                });
+            // Config tags
+            const cfgArea = document.getElementById('config-display');
+            if (run.config) {
+                const c = run.config;
+                cfgArea.innerHTML = `
+                    <span class="config-tag">${c.negotiation_style}</span>
+                    <span class="config-tag">🎯 B: ${c.buyer_strategy}</span>
+                    <span class="config-tag">🎯 S: ${c.seller_strategy}</span>
+                    <span class="config-tag">🌡️ ${c.buyer_temperature}</span>
+                `;
             } else {
-                timeline.innerHTML = '<p style="color:var(--text-muted)">Tracking data unavailable for this run.</p>';
+                cfgArea.innerHTML = '';
             }
+
+            // ─ Metrics ─
+            const maxTurns = 20;
+            document.getElementById('m-turns').textContent = run.turns;
+            document.getElementById('m-turns-sub').textContent = `of ${maxTurns} max`;
+
+            document.getElementById('m-price').textContent = run.final_price ? '$' + run.final_price.toFixed(2) : 'N/A';
+            document.getElementById('m-price-sub').textContent = run.reason || '';
+
+            // Efficiency score: how quickly it resolved (lower turns = higher efficiency)
+            const efficiency = Math.max(0, Math.round((1 - (run.turns / maxTurns)) * 100));
+            document.getElementById('m-efficiency').textContent = efficiency + '%';
+
+            // Loop detection: count repeated prices
+            const loopInfo = detectLoops(run.steps);
+            document.getElementById('m-loop').textContent = loopInfo.count > 0 ? loopInfo.count : 'None';
+            document.getElementById('m-loop-sub').textContent = loopInfo.count > 0 ? 'repeats found' : 'clean run';
+
+            // ─ Price Chart ─
+            renderPriceChart(run.steps);
+
+            // ─ Failure Report ─
+            renderFailureReport(run.failure_report);
+
+            // ─ Timeline ─
+            renderTimeline(run.steps);
+        }
+
+        // ─── Loop Detection ───
+        function detectLoops(steps) {
+            if (!steps || steps.length < 3) return { count: 0 };
+            let repeats = 0;
+            const pricesByAgent = {};
+            steps.forEach(step => {
+                const price = step.action?.price;
+                const agent = step.agent;
+                if (price != null) {
+                    if (!pricesByAgent[agent]) pricesByAgent[agent] = [];
+                    const prev = pricesByAgent[agent];
+                    if (prev.length > 0 && prev[prev.length - 1] === price) {
+                        repeats++;
+                    }
+                    prev.push(price);
+                }
+            });
+            return { count: repeats };
+        }
+
+        // ─── Price Chart ───
+        function renderPriceChart(steps) {
+            const ctx = document.getElementById('priceChart').getContext('2d');
+            if (priceChart) priceChart.destroy();
+
+            if (!steps || steps.length === 0) return;
+
+            const buyerData = [];
+            const sellerData = [];
+            const labels = [];
+
+            steps.forEach((step, i) => {
+                const price = step.action?.price;
+                labels.push(`T${step.turn}`);
+                const isBuyer = step.agent.toLowerCase().includes('buyer');
+                if (isBuyer) {
+                    buyerData.push(price ?? null);
+                    sellerData.push(null);
+                } else {
+                    sellerData.push(price ?? null);
+                    buyerData.push(null);
+                }
+            });
+
+            priceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'Buyer',
+                            data: buyerData,
+                            borderColor: '#38bdf8',
+                            backgroundColor: 'rgba(56,189,248,0.1)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#38bdf8',
+                            fill: false,
+                            spanGaps: true,
+                        },
+                        {
+                            label: 'Seller',
+                            data: sellerData,
+                            borderColor: '#f472b6',
+                            backgroundColor: 'rgba(244,114,182,0.1)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#f472b6',
+                            fill: false,
+                            spanGaps: true,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: '#94a3b8',
+                                font: { family: 'Inter', size: 11 },
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: '#1e293b',
+                            titleColor: '#f1f5f9',
+                            bodyColor: '#94a3b8',
+                            borderColor: '#334155',
+                            borderWidth: 1,
+                            padding: 10,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function (context) {
+                                    if (context.parsed.y !== null) {
+                                        return `${context.dataset.label}: $${context.parsed.y.toFixed(2)}`;
+                                    }
+                                    return '';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255,255,255,0.04)' },
+                            ticks: { color: '#64748b', font: { size: 10 } }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255,255,255,0.04)' },
+                            ticks: {
+                                color: '#64748b',
+                                font: { size: 10 },
+                                callback: v => '$' + v
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ─── Decision Timeline ───
+        function renderTimeline(steps) {
+            const container = document.getElementById('timeline-container');
+            container.innerHTML = '';
+
+            if (!steps || steps.length === 0) {
+                container.innerHTML = '<p style="color:var(--text-dim);font-size:0.85rem;">No tracking data available.</p>';
+                return;
+            }
+
+            steps.forEach((step, index) => {
+                const isBuyer = step.agent.toLowerCase().includes('buyer');
+                const agentClass = isBuyer ? 'buyer' : 'seller';
+                const action = step.action?.action || step.action?.type || '?';
+                const price = step.action?.price;
+                const reasoning = step.action?.reasoning || '';
+
+                const stepEl = document.createElement('div');
+                stepEl.className = `timeline-step ${agentClass}`;
+                stepEl.style.animationDelay = `${index * 0.04}s`;
+
+                const priceHtml = (typeof price === 'number')
+                    ? `<span class="action-price">$${price.toFixed(2)}</span>`
+                    : '';
+
+                const actionClass = action === 'accept' ? ' accept' : action === 'reject' ? ' reject' : '';
+
+                const reasoningHtml = reasoning
+                    ? `<div class="step-reasoning">${reasoning}</div>`
+                    : '';
+
+                stepEl.innerHTML = `
+                    <div class="step-card">
+                        <div class="step-header">
+                            <span class="turn-label">T${step.turn}</span>
+                            <span class="agent-name ${agentClass}">${step.agent}</span>
+                            <span class="action-tag${actionClass}">${action}</span>
+                            ${priceHtml}
+                        </div>
+                        ${reasoningHtml}
+                    </div>
+                `;
+                container.appendChild(stepEl);
+            });
+        }
+
+        // ─── Failure Report ───
+        function renderFailureReport(report) {
+            const panel = document.getElementById('failure-panel');
+            const scoreArea = document.getElementById('risk-score-area');
+            const cardsContainer = document.getElementById('failure-cards-container');
+
+            if (!report || !report.failures || report.failures.length === 0) {
+                panel.classList.add('hidden');
+                return;
+            }
+
+            panel.classList.remove('hidden');
+
+            // Risk gauge
+            const score = report.risk_score || 0;
+            const riskLevel = score >= 50 ? 'high' : score >= 20 ? 'medium' : 'low';
+
+            scoreArea.innerHTML = `
+                <div class="risk-gauge ${riskLevel}">${score}</div>
+                <div class="risk-summary">
+                    <strong>Risk Score: ${score}/100</strong><br>
+                    ${report.summary || `${report.failures.length} issue(s) detected.`}
+                </div>
+            `;
+
+            // Failure type icons
+            const typeIcons = {
+                loop_failure: '🔄',
+                deadlock: '🔒',
+                irrational_concession: '⚠️',
+                invalid_action: '❌',
+                protocol_violation: '🚫'
+            };
+
+            // Cards
+            cardsContainer.innerHTML = '';
+            report.failures.forEach((f, i) => {
+                const card = document.createElement('div');
+                card.className = `failure-card severity-${f.severity}`;
+                card.style.animationDelay = `${i * 0.05}s`;
+
+                card.innerHTML = `
+                    <span class="failure-icon">${typeIcons[f.type] || '⚠️'}</span>
+                    <div class="failure-details">
+                        <div class="failure-meta">
+                            <span class="failure-type-tag ${f.severity}">${f.type.replace(/_/g, ' ')}</span>
+                            <span class="failure-turn">Turn ${f.turn} · ${f.agent}</span>
+                        </div>
+                        <div class="failure-desc">${f.description}</div>
+                    </div>
+                `;
+                cardsContainer.appendChild(card);
+            });
         }
     </script>
 </body>

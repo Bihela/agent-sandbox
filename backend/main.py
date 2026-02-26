@@ -3,21 +3,37 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import Optional
 from world.world_manager import WorldManager
+from configs.simulation_config import SimulationConfig, AgentConfig, StrategyType, RiskLevel, NegotiationStyle
 
 app = FastAPI()
 world_manager = WorldManager()
 
 from scenarios.price_negotiation import PriceNegotiationScenario
 
+
+class AgentConfigRequest(BaseModel):
+    strategy: str = "adaptive"
+    risk_level: str = "medium"
+    temperature: float = 0.7
+
+
 class SimulationRequest(BaseModel):
     scenario_type: str = "price_negotiation"
     buyer_max: Optional[float] = 150.0
     seller_min: Optional[float] = 100.0
     max_turns: Optional[int] = 20
+    # Config fields
+    negotiation_style: Optional[str] = "formal"
+    model_name: Optional[str] = "mistral"
+    temperature: Optional[float] = 0.7
+    buyer_config: Optional[AgentConfigRequest] = None
+    seller_config: Optional[AgentConfigRequest] = None
+
 
 @app.get("/")
 def read_root():
     return {"status": "ok", "message": "Backend is running"}
+
 
 @app.post("/simulation/start")
 def start_simulation(req: SimulationRequest):
@@ -26,10 +42,39 @@ def start_simulation(req: SimulationRequest):
             scenario = PriceNegotiationScenario(buyer_max=req.buyer_max, seller_min=req.seller_min, max_turns=req.max_turns)
         else:
             raise ValueError(f"Unknown scenario type: {req.scenario_type}")
-        result = world_manager.start_simulation(scenario)
+
+        # Build SimulationConfig from request
+        temp = req.temperature if req.temperature is not None else 0.7
+
+        buyer_agent_cfg = AgentConfig(
+            strategy=StrategyType(req.buyer_config.strategy if req.buyer_config else "adaptive"),
+            risk_level=RiskLevel(req.buyer_config.risk_level if req.buyer_config else "medium"),
+            temperature=req.buyer_config.temperature if (req.buyer_config and req.buyer_config.temperature is not None) else temp,
+        )
+        seller_agent_cfg = AgentConfig(
+            strategy=StrategyType(req.seller_config.strategy if req.seller_config else "adaptive"),
+            risk_level=RiskLevel(req.seller_config.risk_level if req.seller_config else "medium"),
+            temperature=req.seller_config.temperature if (req.seller_config and req.seller_config.temperature is not None) else temp,
+        )
+
+        config = SimulationConfig(
+            buyer_max=req.buyer_max or 150.0,
+            seller_min=req.seller_min or 100.0,
+            max_turns=req.max_turns or 20,
+            negotiation_style=NegotiationStyle(req.negotiation_style or "formal"),
+            buyer_config=buyer_agent_cfg,
+            seller_config=seller_agent_cfg,
+            model_name=req.model_name or "mistral",
+            temperature=temp,
+        )
+
+        result = world_manager.start_simulation(scenario, config)
         return {"status": "success", "data": result}
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
 
 class BatchSimulationRequest(SimulationRequest):
     runs: int = 100
@@ -58,5 +103,14 @@ def get_simulation(sim_id: str):
     if "error" in result:
         raise HTTPException(status_code=404, detail="Simulation not found")
     return {"status": "success", "data": result}
+
+@app.get("/config/options")
+def get_config_options():
+    """Returns all available config options for the frontend dropdowns."""
+    return {
+        "strategies": [e.value for e in StrategyType],
+        "risk_levels": [e.value for e in RiskLevel],
+        "negotiation_styles": [e.value for e in NegotiationStyle],
+    }
 
 app.mount("/play", StaticFiles(directory="frontend", html=True), name="frontend")

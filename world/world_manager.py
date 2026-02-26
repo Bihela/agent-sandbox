@@ -1,9 +1,10 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import uuid
 from agents.base_agent import Agent
 from agents.llm_agent import LLMBuyerAgent, LLMSellerAgent
 from world.mediator import Mediator
 from metrics.storage import save_simulation_result
+from configs.simulation_config import SimulationConfig, DEFAULT_CONFIG
 
 class WorldManager:
     def __init__(self):
@@ -11,22 +12,56 @@ class WorldManager:
         # In-memory storage for replays (in a real app, this might go to DB or Redis)
         self.historical_runs: Dict[str, Any] = {}
 
-    def start_simulation(self, scenario: Any) -> dict:
+    def start_simulation(self, scenario: Any, config: Optional[SimulationConfig] = None) -> dict:
         """
         Core entry point to start the simulation with a defined Scenario
         """
+        if config is None:
+            config = DEFAULT_CONFIG
+
         sim_id = str(uuid.uuid4())
         
-        # 1. create agents and mediator using the scenario
+        # 1. create agents and mediator using the scenario + config
         buyer_params = scenario.get_buyer_params()
         seller_params = scenario.get_seller_params()
-        
-        agent_a = LLMBuyerAgent("Alice (LLM Buyer)", **buyer_params)
-        agent_b = LLMSellerAgent("Bob (LLM Seller)", **seller_params)
+
+        # Build prompt modifiers from config
+        style_prompt = config.get_style_prompt()
+        buyer_strategy = config.get_strategy_prompt(config.buyer_config.strategy)
+        buyer_risk = config.get_risk_prompt(config.buyer_config.risk_level)
+        seller_strategy = config.get_strategy_prompt(config.seller_config.strategy)
+        seller_risk = config.get_risk_prompt(config.seller_config.risk_level)
+
+        buyer_temp = config.buyer_config.temperature if config.buyer_config.temperature is not None else config.temperature
+        seller_temp = config.seller_config.temperature if config.seller_config.temperature is not None else config.temperature
+
+        agent_a = LLMBuyerAgent(
+            "Alice (LLM Buyer)", **buyer_params,
+            temperature=buyer_temp,
+            strategy_prompt=buyer_strategy,
+            risk_prompt=buyer_risk,
+            style_prompt=style_prompt,
+            model=config.model_name,
+        )
+        agent_b = LLMSellerAgent(
+            "Bob (LLM Seller)", **seller_params,
+            temperature=seller_temp,
+            strategy_prompt=seller_strategy,
+            risk_prompt=seller_risk,
+            style_prompt=style_prompt,
+            model=config.model_name,
+        )
         mediator = Mediator(max_turns=scenario.max_turns)
 
         # 2. Start negotiation and monitor with initial state
         result_details = self._run_negotiation_loop(agent_a, agent_b, mediator, scenario.get_initial_state())
+
+        # 2b. Run failure taxonomy analysis over the completed transcript
+        failure_report = mediator.get_failure_report(
+            result_details["steps"],
+            buyer_max=buyer_params.get("max_price", 150),
+            seller_min=seller_params.get("min_price", 100)
+        )
         
         # 3. Store results in SQLite
         final_price = None
@@ -42,7 +77,18 @@ class WorldManager:
             final_price=final_price
         )
 
-        # 4. Save replay data in memory
+        # 4. Save replay data in memory (include config snapshot for UI)
+        config_snapshot = {
+            "negotiation_style": config.negotiation_style.value,
+            "buyer_strategy": config.buyer_config.strategy.value,
+            "buyer_risk": config.buyer_config.risk_level.value,
+            "buyer_temperature": buyer_temp,
+            "seller_strategy": config.seller_config.strategy.value,
+            "seller_risk": config.seller_config.risk_level.value,
+            "seller_temperature": seller_temp,
+            "model": config.model_name,
+        }
+
         output = {
             "simulation_id": sim_id,
             "status": result_details["status"],
@@ -50,7 +96,9 @@ class WorldManager:
             "final_price": final_price,
             "reason": result_details["reason"],
             "history": [msg.dict() for msg in mediator.history],
-            "steps": result_details["steps"]
+            "steps": result_details["steps"],
+            "failure_report": failure_report,
+            "config": config_snapshot,
         }
         self.historical_runs[sim_id] = output
         self.results.append(output)

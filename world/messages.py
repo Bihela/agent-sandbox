@@ -15,3 +15,4 @@ class NegotiationMessage(BaseModel):
     """
     type: MessageType
     price: Optional[float] = None
+    reasoning: Optional[str] = None

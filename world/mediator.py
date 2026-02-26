@@ -1,11 +1,14 @@
 from typing import List, Optional
 from world.messages import NegotiationMessage, MessageType
+from metrics.failure_detector import FailureDetector
+
 
 class Mediator:
     def __init__(self, max_turns: int = 20):
         self.max_turns = max_turns
         self.turn_count = 0
         self.history: List[NegotiationMessage] = []
+        self.failure_detector = FailureDetector()
 
     def check_turn(self, current_action_dict: dict) -> dict:
         """
@@ -41,3 +44,9 @@ class Mediator:
                 return {"stop": True, "reason": "Repetitive behavior detected (agents stuck)", "status": "error"}
 
         return {"stop": False, "reason": "", "status": "ongoing"}
+
+    def get_failure_report(self, steps: list, buyer_max: float, seller_min: float) -> dict:
+        """
+        Post-simulation analysis: run the full failure taxonomy engine over the transcript.
+        """
+        return self.failure_detector.analyze(steps, buyer_max, seller_min)
