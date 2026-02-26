@@ -65,11 +65,13 @@ Respond in EXACT JSON format with no markdown wrappers or other text:
             }
         ) as span:
             try:
+                print(f"DEBUG: [{self.name}] Calling Ollama ({self.model})...")
                 response = ollama.chat(
                     model=self.model,
                     messages=self.history,
                     options={"temperature": self.temperature}
                 )
+                print(f"DEBUG: [{self.name}] Ollama response received.")
 
                 generated_text = response.get("message", {}).get("content", "")
                 tokens_used = response.get("eval_count", 0) + response.get("prompt_eval_count", 0)
@@ -79,12 +81,29 @@ Respond in EXACT JSON format with no markdown wrappers or other text:
 
                 result = json.loads(generated_text)
 
-                # Normalize: if LLM used "action" instead of "type", fix it
+                # Protocol Normalization (ACP Mappings)
+                type_map = {
+                    "offer": "proposal",
+                    "counter_offer": "counter_proposal",
+                    "accept": "acceptance",
+                    "reject": "rejection",
+                    "action": "type" # Handle LLMs using 'action' key
+                }
+                
+                # Fix key name if LLM used 'action'
                 if "action" in result and "type" not in result:
                     result["type"] = result.pop("action")
+                
+                # Map old/informal types to ACP
+                current_type = result.get("type", "").lower()
+                if current_type in type_map:
+                    result["type"] = type_map[current_type]
 
                 if "reasoning" not in result:
                     result["reasoning"] = ""
+                
+                if "metadata" not in result:
+                    result["metadata"] = {}
 
                 self.history.append({"role": "assistant", "content": generated_text})
 

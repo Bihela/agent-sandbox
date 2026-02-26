@@ -85,4 +85,21 @@ This document records decisions made during development, specifically logging ap
 
 ---
 
+### 🟢 [Tournament Engine & Global Leaderboard — Automated Benchmarking]
+- **Date**: 2026-02-26
+- **Context**: We needed a way to objectively compare agent strategies and models over many runs to observe emergent behaviors and performance trends.
+- **Decision**: Implemented a `TournamentRunner` that performs round-robin matchups between all active strategies. Created a `Leaderboard` system with JSON persistence (`data/leaderboard.json`).
+- **Reasoning (Why rejected)**: Initially attempted to use strictly typed Pydantic models for the tournament API, but rejected this in favor of a `Dict`-based request handler due to persistent `PydanticUserError` (not fully defined) issues specifically encountered in the Windows FastAPI/Uvicorn environment during runtime model evaluation. 
+### 🟢 [Red Team Adversarial Engine — Stress Testing]
+- **Date**: 2026-02-26
+- **Context**: We need to verify that the `FailureDetector` can handle malicious or irrational actor inputs and observe how different agent strategies react to deception.
+- **Decision**: Implemented a `RedTeamAgent` as a "Man-in-the-Middle" disruptor. It intercepts and corrupts actions (wrong numbers, fake constraints, protocol violations) based on a configurable probability.
+- **Impact**: Allows for adversarial benchmarking. Strategies can now be "Red Teamed" to see if they concede irrationally to fake pressure or break under malformed protocol inputs.
+
+### 🟢 [Experiment Research Engine — Grid Search API]
+- **Date**: 2026-02-26
+- **Context**: To turn the sandbox into a research engine, we needed a way to automate hundreds of simulations while varying specific hyperparameters (Grid Search).
+- **Decision**: Implemented `ExperimentRunner` in a dedicated `experiments/` module. It performs Cartesian product sweeps over strategies and temperatures.
+- **Impact**: Enables scientific study of negotiation behavior. Users can now click one button to see how `temperature` affects win rates across all strategy combinations.
+
 *(No more entries. Add entries here when evaluating features, dependencies, or architectural choices.)*

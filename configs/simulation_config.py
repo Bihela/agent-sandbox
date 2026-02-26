@@ -43,6 +43,16 @@ class AgentConfig(BaseModel):
     temperature: float = Field(default=0.7, ge=0.0, le=2.0, description="LLM temperature (0=deterministic, 2=creative)")
 
 
+class RedTeamConfig(BaseModel):
+    """Configuration for adversarial testing."""
+    enabled: bool = Field(default=False, description="Whether to enable Red Team attacks")
+    attack_probability: float = Field(default=0.2, ge=0.0, le=1.0, description="Chance of attack per turn")
+    attack_types: list[str] = Field(
+        default=["wrong_number", "fake_constraint", "protocol_violation", "deceptive_offer"],
+        description="List of enabled attack types"
+    )
+
+
 class SimulationConfig(BaseModel):
     """
     Master configuration for a negotiation simulation.
@@ -61,6 +71,7 @@ class SimulationConfig(BaseModel):
     )
     buyer_config: AgentConfig = Field(default_factory=AgentConfig, description="Buyer agent config")
     seller_config: AgentConfig = Field(default_factory=AgentConfig, description="Seller agent config")
+    red_team_config: RedTeamConfig = Field(default_factory=RedTeamConfig, description="Red Team attack config")
 
     # ─── LLM Settings ───
     model_name: str = Field(default="mistral", description="Ollama model name")

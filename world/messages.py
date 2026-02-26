@@ -1,18 +1,28 @@
 from enum import Enum
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Literal
 
 class MessageType(str, Enum):
-    OFFER = "offer"
-    COUNTER_OFFER = "counter_offer"
-    ACCEPT = "accept"
-    REJECT = "reject"
+    PROPOSAL = "proposal"
+    COUNTER_PROPOSAL = "counter_proposal"
+    ACCEPTANCE = "acceptance"
+    REJECTION = "rejection"
+    INFORMATION = "information"
+    CHALLENGE = "challenge"
+
+    # Legacy mappings (for backward compatibility if needed temporarily)
+    OFFER = "proposal"
+    COUNTER_OFFER = "counter_proposal"
+    ACCEPT = "acceptance"
+    REJECT = "rejection"
 
 class NegotiationMessage(BaseModel):
     """
-    Standard message format for agent negotiation.
-    Example: {"type": "offer", "price": 120.0}
+    Standard ACP-like message format for agent negotiation.
     """
+    sender: str
+    receiver: str
     type: MessageType
     price: Optional[float] = None
     reasoning: Optional[str] = None
+    metadata: dict = {}

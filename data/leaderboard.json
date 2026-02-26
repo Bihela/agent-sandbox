@@ -1,0 +1,36 @@
+{
+  "strategies": {
+    "aggressive": {
+      "runs": 13,
+      "agreements": 0,
+      "total_turns": 72,
+      "concessions": 0
+    },
+    "balanced": {
+      "runs": 9,
+      "agreements": 0,
+      "total_turns": 71,
+      "concessions": 0
+    },
+    "conservative": {
+      "runs": 8,
+      "agreements": 0,
+      "total_turns": 57,
+      "concessions": 0
+    },
+    "adaptive": {
+      "runs": 8,
+      "agreements": 0,
+      "total_turns": 76,
+      "concessions": 0
+    }
+  },
+  "models": {
+    "mistral": {
+      "runs": 19,
+      "agreements": 0,
+      "avg_latency_ms": 9460.468421052632
+    }
+  },
+  "last_updated": "2026-02-26T18:19:11.186465"
+}

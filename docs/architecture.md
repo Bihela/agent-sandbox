@@ -15,7 +15,7 @@ The Agent Sandbox is a multi-agent system backend built using FastAPI.
 - `world/`: Environment and world state definitions for the agents.
 - `scenarios/`: Specific simulation scenarios and workflows.
 - `metrics/`: Analytics and performance tracking of agent outcomes.
-- `frontend/`: UI components (if applicable in the future).
+- `tournaments/`: Round-robin tournament runner and leaderboard logic.
 - `docs/`: Project documentation, architecture, and memory bank.
 
 ## Features
@@ -43,4 +43,11 @@ The Agent Sandbox is a multi-agent system backend built using FastAPI.
 - **OpenTelemetry Logging System**: `telemetry_module/telemetry.py` provides research-grade structured telemetry using OpenTelemetry SDK. Tracks decision latency (per-agent, avg, P95, max), token usage, model errors/fallbacks, and negotiation complexity scores. `TelemetryCollector` aggregates per-simulation and global metrics. Exposed via `/telemetry` API endpoint and rendered in the frontend's 📡 Telemetry panel with latency bar visualizations.
 - **Agent Strategy System**: Pluggable strategy modules in `agents/strategies/` with `BaseStrategy` abstract class, three implementations (aggressive 5% concession, balanced 10%, conservative 20%), and a registry with aliases. Strategies provide both LLM system prompts and programmatic fallback logic, replacing the previous hardcoded fallback. Enables strategy experiments from the UI.
 - **Dataset Export System**: `metrics/dataset_exporter.py` flattens simulation replays into tabular rows (one per decision step) with 20 columns spanning simulation metadata, config, failure analysis, telemetry, and per-step actions. Exposed via `GET /dataset/export?format=json|csv`. Frontend sidebar has JSON/CSV download buttons. Turns the sandbox into a negotiation dataset generator.
+- **Agent Cards & Discovery System**: Machine-readable agent descriptors in `agents/cards/` (JSON). `agents/card_loader.py` provides semantic discovery and cross-agent compatibility checking (protocol, I/O schema, capabilities). Discovery area in the frontend automatically surface available agents and simulation-readiness reports. This aligns with emerging industry standards for agentic ecosystems.
+- **Tournament Engine & Global Leaderboard**: Automated benchmarking system in `tournaments/`. 
+  - `TournamentRunner`: Orchestrates round-robin simulations between multiple strategies (Aggressive, Balanced, Conservative, Adaptive) and models. 
+  - `Leaderboard`: Persistent JSON-based storage (`data/leaderboard.json`) calculating win rates, average turns, and aggregate performance. 
+  - UI Integration: Sidebar controls to trigger benchmarking runs and a dedicated "🏆 Global Leaderboard" panel to visualize strategy effectiveness over time.
+- **Red Team Adversarial Engine**: A specialized `RedTeamAgent` that acts as a "Man-in-the-Middle" during simulations. It disrupts negotiations by injecting wrong numbers, fake constraints, or protocol violations based on a configurable attack probability. This allows stress-testing of the `FailureDetector` and observation of how strategies handle deception.
+- **Experiment Research Engine**: A high-level orchestrator (`ExperimentRunner`) that performs complex parameter sweeps (Grid Search) across multiple variables (temperature, strategies, models). Results are aggregated into structured JSON datasets for scientific analysis of model convergence and behavior.
 

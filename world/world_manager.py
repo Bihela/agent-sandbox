@@ -2,6 +2,7 @@ from typing import List, Dict, Any, Optional
 import uuid
 from agents.base_agent import Agent
 from agents.llm_agent import LLMBuyerAgent, LLMSellerAgent
+from agents.red_team_agent import RedTeamAgent
 from world.mediator import Mediator
 from metrics.storage import save_simulation_result
 from configs.simulation_config import SimulationConfig, DEFAULT_CONFIG
@@ -10,8 +11,9 @@ from telemetry_module.telemetry import tracer, collector
 class WorldManager:
     def __init__(self):
         self.results = []
-        # In-memory storage for replays (in a real app, this might go to DB or Redis)
+        # In-memory storage for replays
         self.historical_runs: Dict[str, Any] = {}
+        self.red_team = RedTeamAgent()
 
     def start_simulation(self, scenario: Any, config: Optional[SimulationConfig] = None) -> dict:
         """
@@ -70,7 +72,7 @@ class WorldManager:
                 "config.seller_strategy": config.seller_config.strategy.value,
             }
         ) as span:
-            result_details = self._run_negotiation_loop(agent_a, agent_b, mediator, scenario.get_initial_state())
+            result_details = self._run_negotiation_loop(agent_a, agent_b, mediator, scenario.get_initial_state(), config)
             span.set_attribute("simulation.status", result_details["status"])
             span.set_attribute("simulation.turns", result_details["turns"])
 
@@ -158,29 +160,50 @@ class WorldManager:
             "average_agreement_price": avg_price
         }
 
-    def _run_negotiation_loop(self, agent_a: Agent, agent_b: Agent, mediator: Mediator, initial_state: dict):
+    def _run_negotiation_loop(self, agent_a: Agent, agent_b: Agent, mediator: Mediator, initial_state: dict, config: SimulationConfig):
         finished = False
         turn_count = 0
         state = initial_state
         steps = []
 
-        
+        import random
+
         while not finished and turn_count < mediator.max_turns:
+            print(f"DEBUG: Turn {turn_count + 1} - Agent A")
             # Agent A's (Buyer) turn
-            action_a = agent_a.decide_action(state)
-            steps.append({"turn": turn_count + 1, "agent": agent_a.name, "action": action_a})
+            action_dict_a = agent_a.decide_action(state)
+            action_dict_a["sender"] = agent_a.name
+            action_dict_a["receiver"] = agent_b.name
             
-            mediator_check_a = mediator.check_turn(action_a)
+            # ─── RED TEAM DISRUPTION A ───
+            if config.red_team_config.enabled and random.random() < config.red_team_config.attack_probability:
+                print(f"DEBUG: Disrupting Agent A's action...")
+                action_dict_a = self.red_team.disrupt(action_dict_a, config.red_team_config.attack_types)
+
+            steps.append({"turn": turn_count + 1, "agent": agent_a.name, "action": action_dict_a, "is_adversarial": action_dict_a.get("is_adversarial", False)})
+            
+            mediator_check_a = mediator.check_turn(action_dict_a)
             if mediator_check_a["stop"]:
+                print(f"DEBUG: Mediator stop A: {mediator_check_a['reason']}")
                 return {"status": mediator_check_a["status"], "turns": turn_count + 1, "reason": mediator_check_a["reason"], "steps": steps}
-            state["current_price"] = action_a.get("price")
+            state["current_price"] = action_dict_a.get("price")
             
+            print(f"DEBUG: Turn {turn_count + 1} - Agent B")
             # Agent B's (Seller) turn
-            action_b = agent_b.decide_action(state)
-            steps.append({"turn": turn_count + 1, "agent": agent_b.name, "action": action_b})
+            action_dict_b = agent_b.decide_action(state)
+            action_dict_b["sender"] = agent_b.name
+            action_dict_b["receiver"] = agent_a.name
             
-            mediator_check_b = mediator.check_turn(action_b)
+            # ─── RED TEAM DISRUPTION B ───
+            if config.red_team_config.enabled and random.random() < config.red_team_config.attack_probability:
+                print(f"DEBUG: Disrupting Agent B's action...")
+                action_dict_b = self.red_team.disrupt(action_dict_b, config.red_team_config.attack_types)
+
+            steps.append({"turn": turn_count + 1, "agent": agent_b.name, "action": action_dict_b, "is_adversarial": action_dict_b.get("is_adversarial", False)})
+            
+            mediator_check_b = mediator.check_turn(action_dict_b)
             if mediator_check_b["stop"]:
+                print(f"DEBUG: Mediator stop B: {mediator_check_b['reason']}")
                 return {"status": mediator_check_b["status"], "turns": turn_count + 1, "reason": mediator_check_b["reason"], "steps": steps}
             state["current_price"] = action_b.get("price")
             

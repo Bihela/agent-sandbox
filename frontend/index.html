@@ -799,6 +799,102 @@
             flex-shrink: 0;
         }
 
+        /* ─── Agent Cards ─── */
+        .agent-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin-top: 24px;
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .agent-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            text-align: left;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .agent-card:hover {
+            transform: translateY(-4px);
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--accent);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .agent-card .role-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            font-size: 0.6rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .role-badge.buyer {
+            background: var(--accent-dim);
+            color: var(--accent);
+        }
+
+        .role-badge.seller {
+            background: var(--primary-dim);
+            color: var(--primary);
+        }
+
+        .agent-card h4 {
+            margin: 0 0 8px 0;
+            color: var(--text);
+            font-size: 1.1rem;
+        }
+
+        .agent-card .desc {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            line-height: 1.4;
+            margin-bottom: 16px;
+        }
+
+        .agent-card .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .agent-card .tag {
+            font-size: 0.65rem;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: var(--text-muted);
+        }
+
+        .compatibility-banner {
+            margin-top: 24px;
+            padding: 12px 20px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid var(--success);
+            border-radius: var(--radius-sm);
+            color: var(--success);
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: fadeIn 0.5s ease both;
+        }
+
+        .compatibility-issue {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
         /* ─── Animations ─── */
         @keyframes fadeIn {
             from {
@@ -1053,6 +1149,38 @@
         </div>
 
         <div class="history-section">
+            <h3>🏆 Agent Tournament</h3>
+            <p style="font-size:0.7rem;color:var(--text-dim);margin:4px 0 8px 0;">Benchmarking round-robin between
+                strategies.</p>
+            <button class="btn secondary" style="width:100%;background:rgba(217,119,6,0.1);color:#d97706;"
+                id="tournament-btn" onclick="runTournament()">
+                🥇 Run Tournament
+            </button>
+            <div id="tournament-status"
+                style="font-size:0.7rem;color:var(--text-dim);text-align:center;margin-top:4px;">
+            </div>
+        </div>
+
+        <div class="history-section">
+            <h3>🔬 Experiment Lab</h3>
+            <p style="font-size:0.7rem;color:var(--text-dim);margin:4px 0 8px 0;">Research engine: Run parameter sweeps.
+            </p>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <button class="btn secondary" style="width:100%;background:rgba(124,58,237,0.1);color:var(--primary);"
+                    onclick="runExperiment('Temperature Sweep')">
+                    🌡️ Run Temperature Sweep
+                </button>
+                <button class="btn secondary" style="width:100%;background:rgba(16,185,129,0.1);color:#10b981;"
+                    onclick="runExperiment('Strategy Benchmark')">
+                    ⚔️ Run Strategy Sweep
+                </button>
+            </div>
+            <div id="experiment-status"
+                style="font-size:0.7rem;color:var(--text-dim);text-align:center;margin-top:4px;">
+            </div>
+        </div>
+
+        <div class="history-section">
             <h3>📦 Export Dataset</h3>
             <div style="display:flex;gap:6px;">
                 <button class="btn secondary" style="flex:1;font-size:0.75rem;padding:6px;"
@@ -1067,6 +1195,28 @@
             <div id="export-status" style="font-size:0.7rem;color:var(--text-dim);text-align:center;margin-top:4px;">
             </div>
         </div>
+
+        <div class="history-section"
+            style="border-top: 1px solid rgba(239, 68, 68, 0.2); margin-top: 15px; padding-top: 15px;">
+            <h3 style="color: #ef4444;">👹 Red Team</h3>
+            <p style="font-size:0.7rem;color:var(--text-dim);margin:4px 0 8px 0;">Inject adversarial disruptions into
+                the simulation.</p>
+
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+                <input type="checkbox" id="red-team-enabled" style="cursor:pointer;">
+                <label for="red-team-enabled" style="font-size:0.8rem; color:var(--text-dim); cursor:pointer;">Enable
+                    Attacks</label>
+            </div>
+
+            <div id="red-team-controls" style="opacity:0.5; pointer-events:none; transition: opacity 0.2s;">
+                <div style="margin-bottom:8px;">
+                    <label style="display:block; font-size:0.7rem; color:var(--text-dim); margin-bottom:4px;">Attack
+                        Probability: <span id="attack-prob-val">20%</span></label>
+                    <input type="range" id="attack-probability" min="0" max="100" value="20" style="width:100%;"
+                        oninput="document.getElementById('attack-prob-val').innerText = this.value + '%'">
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- ═══ Main Content ═══ -->
@@ -1075,9 +1225,25 @@
         <!-- Welcome State -->
         <div id="welcome-state">
             <div class="welcome-icon">🤖</div>
-            <h2>Select or Start a Simulation</h2>
-            <p>Watch autonomous AI agents negotiate in real-time. Analyze pricing strategies, decision patterns, and
-                negotiation efficiency.</p>
+            <h2>Discovery & Ecosystem</h2>
+            <p>Load autonomous agent cards to verify capabilities and compatibility.</p>
+
+            <div id="agent-discovery-area" class="agent-cards-grid">
+                <!-- Injected by JS -->
+                <div style="color: var(--text-dim); padding: 40px; grid-column: 1/-1;">Scanning for available agents...
+                </div>
+            </div>
+
+            <div id="compat-discovery-area"></div>
+
+            <div id="leaderboard-panel" class="glass-panel" style="margin-top:20px;display:none;">
+                <div class="panel-header">
+                    <h2>🏆 Global Leaderboard</h2>
+                </div>
+                <div id="leaderboard-content">
+                    <div style="color:var(--text-dim);padding:20px;text-align:center;">No tournament data yet.</div>
+                </div>
+            </div>
         </div>
 
         <!-- Simulation View (hidden by default) -->
@@ -1190,6 +1356,19 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             loadHistory();
+            loadConfigOptions();
+            loadAgentCards();
+            loadLeaderboard();
+
+            // Red Team UI Toggles
+            const redTeamToggle = document.getElementById('red-team-enabled');
+            const redTeamControls = document.getElementById('red-team-controls');
+            if (redTeamToggle) {
+                redTeamToggle.addEventListener('change', () => {
+                    redTeamControls.style.opacity = redTeamToggle.checked ? '1' : '0.5';
+                    redTeamControls.style.pointerEvents = redTeamToggle.checked ? 'all' : 'none';
+                });
+            }
         });
 
         function toggleConfig() {
@@ -1277,6 +1456,10 @@
                     risk_level: document.getElementById('cfg-seller-risk').value,
                     temperature: parseFloat(document.getElementById('cfg-temp').value),
                 },
+                red_team_config: {
+                    enabled: document.getElementById('red-team-enabled').checked,
+                    attack_probability: parseFloat(document.getElementById('attack-probability').value) / 100,
+                }
             };
 
             try {
@@ -1299,6 +1482,136 @@
             } finally {
                 btn.classList.remove('loading-btn');
                 btnText.textContent = '▶ Start Simulation';
+            }
+        }
+
+        // ─── Tournament ───
+        async function runTournament() {
+            const btn = document.getElementById('tournament-btn');
+            const status = document.getElementById('tournament-status');
+
+            btn.disabled = true;
+            btn.textContent = '⏳ Running...';
+            status.textContent = 'Round-robin benchmarking...';
+
+            try {
+                const res = await fetch(`${API_BASE}/tournament/run`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        strategies: ["aggressive", "balanced", "conservative", "adaptive"],
+                        models: ["mistral"],
+                        runs_per_match: 1
+                    })
+                });
+                const json = await res.json();
+                if (json.status === 'success') {
+                    status.textContent = `✅ Complete! ${json.data.total_simulations} sims run.`;
+                    loadLeaderboard();
+                    loadHistory();
+                }
+            } catch (e) {
+                status.textContent = '❌ Tournament failed.';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🥇 Run Tournament';
+            }
+        }
+
+        async function runExperiment(type) {
+            const status = document.getElementById('experiment-status');
+            status.textContent = `⏳ Running ${type}...`;
+
+            let payload = { name: type, runs_per_config: 2 };
+            if (type === 'Temperature Sweep') {
+                payload.temperatures = [0.1, 0.5, 0.9];
+                payload.strategies = ['balanced'];
+            } else if (type === 'Strategy Benchmark') {
+                payload.strategies = ['aggressive', 'balanced', 'conservative', 'adaptive'];
+                payload.temperatures = [0.7];
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/experiment/run`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const json = await res.json();
+                if (json.status === 'success') {
+                    status.textContent = `✅ Experiment ${json.experiment_id.substring(0, 8)} started.`;
+                    setTimeout(() => {
+                        loadHistory();
+                    }, 2000);
+                }
+            } catch (e) {
+                status.textContent = '❌ Experiment failed.';
+            }
+        }
+
+        async function loadLeaderboard() {
+            const panel = document.getElementById('leaderboard-panel');
+            const content = document.getElementById('leaderboard-content');
+
+            try {
+                const res = await fetch(`${API_BASE}/tournament/leaderboard`);
+                const data = await res.json();
+
+                if (data.status === 'success' && data.data.strategies.length > 0) {
+                    panel.style.display = 'block';
+                    let html = `
+                        <table style="width:100%;border-collapse:collapse;font-size:0.85rem;margin-top:10px;">
+                            <thead>
+                                <tr style="border-bottom:1px solid var(--border);color:var(--text-dim);text-align:left;">
+                                    <th style="padding:8px;">Strategy</th>
+                                    <th style="padding:8px;">Win Rate</th>
+                                    <th style="padding:8px;">Avg Turns</th>
+                                    <th style="padding:8px;">Runs</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+
+                    data.data.strategies.forEach(s => {
+                        html += `
+                            <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+                                <td style="padding:10px;"><strong>${s.name}</strong></td>
+                                <td style="padding:10px;"><span class="badge ${s.win_rate > 50 ? 'success' : 'warning'}">${s.win_rate}%</span></td>
+                                <td style="padding:10px;">${s.avg_turns}</td>
+                                <td style="padding:10px;color:var(--text-dim)">${s.total_runs}</td>
+                            </tr>
+                        `;
+                    });
+
+                    html += `</tbody></table>`;
+                    html += `<p style="font-size:0.65rem;color:var(--text-dim);margin-top:10px;text-align:right;">Last updated: ${new Date(data.data.last_updated).toLocaleString()}</p>`;
+                    content.innerHTML = html;
+                }
+            } catch (e) {
+                console.error("Leaderboard error:", e);
+            }
+        }
+
+        // ─── Config Options ───
+        async function loadConfigOptions() {
+            try {
+                const res = await fetch(`${API_BASE}/config/options`);
+                const data = await res.json();
+
+                const buyerSelect = document.getElementById('cfg-buyer-strategy');
+                const sellerSelect = document.getElementById('cfg-seller-strategy');
+
+                if (data.strategies) {
+                    const html = data.strategies.map(s => `<option value="${s}">${s.charAt(0).toUpperCase() + s.slice(1)}</option>`).join('');
+                    buyerSelect.innerHTML = html;
+                    sellerSelect.innerHTML = html;
+
+                    // Set defaults
+                    buyerSelect.value = 'adaptive';
+                    sellerSelect.value = 'adaptive';
+                }
+            } catch (e) {
+                console.warn("Failed to load config options dynamically, using defaults.");
             }
         }
 
@@ -1508,7 +1821,8 @@
                 const reasoning = step.action?.reasoning || '';
 
                 const stepEl = document.createElement('div');
-                stepEl.className = `timeline-step ${agentClass}`;
+                const isAdversarial = step.is_adversarial || step.action?.is_adversarial;
+                stepEl.className = `timeline-step ${agentClass}${isAdversarial ? ' adversarial' : ''}`;
                 stepEl.style.animationDelay = `${index * 0.04}s`;
 
                 const priceHtml = (typeof price === 'number')
@@ -1683,6 +1997,62 @@
                 statusEl.textContent = '❌ No data yet — run a simulation first!';
             }
             setTimeout(() => { statusEl.textContent = ''; }, 3000);
+        }
+
+        // ─── Agent Discovery ───
+        async function loadAgentCards() {
+            const area = document.getElementById('agent-discovery-area');
+            const compatArea = document.getElementById('compat-discovery-area');
+
+            try {
+                const res = await fetch(`${API_BASE}/agents/cards`);
+                const data = await res.json();
+
+                if (data.status === 'success') {
+                    area.innerHTML = '';
+                    data.agents.forEach(card => {
+                        const el = document.createElement('div');
+                        el.className = 'agent-card';
+                        el.innerHTML = `
+                            <div class="role-badge ${card.role}">${card.role}</div>
+                            <h4>${card.agent_name} <span style="font-size:0.7rem;color:var(--text-dim)">v${card.version}</span></h4>
+                            <div class="desc">${card.description}</div>
+                            <div class="tags">
+                                ${card.capabilities.map(c => `<span class="tag">${c.replace(/_/g, ' ')}</span>`).join('')}
+                                <span class="tag" style="background:var(--primary-dim);color:var(--primary)">${card.framework}</span>
+                            </div>
+                        `;
+                        area.appendChild(el);
+                    });
+
+                    if (data.compatibility) {
+                        const c = data.compatibility;
+                        if (c.compatible) {
+                            compatArea.innerHTML = `
+                                <div class="compatibility-banner">
+                                    <span>✅</span>
+                                    <div>
+                                        <strong>Ready for Simulation</strong><br>
+                                        <span style="font-size:0.75rem;opacity:0.8">Agents share protocol ${data.agents[0].protocol} and compatible I/O schemas.</span>
+                                    </div>
+                                </div>
+                            `;
+                        } else {
+                            compatArea.innerHTML = `
+                                <div class="compatibility-banner compatibility-issue">
+                                    <span>⚠️</span>
+                                    <div>
+                                        <strong>Compatibility Issues Detected</strong><br>
+                                        <span style="font-size:0.75rem;opacity:0.8">${c.issues.join(', ')}</span>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    }
+                }
+            } catch (e) {
+                area.innerHTML = '<div style="color:var(--danger)">Failed to load agent cards.</div>';
+            }
         }
     </script>
 </body>

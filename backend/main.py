@@ -1,14 +1,20 @@
+from __future__ import annotations
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Dict, List
 from world.world_manager import WorldManager
-from configs.simulation_config import SimulationConfig, AgentConfig, StrategyType, RiskLevel, NegotiationStyle
+from configs.simulation_config import SimulationConfig, AgentConfig, StrategyType, RiskLevel, NegotiationStyle, RedTeamConfig
+from scenarios.price_negotiation import PriceNegotiationScenario
+from tournaments.tournament_runner import TournamentRunner
+from tournaments.leaderboard import Leaderboard
+from experiments.experiment_runner import ExperimentRunner
 
 app = FastAPI()
 world_manager = WorldManager()
-
-from scenarios.price_negotiation import PriceNegotiationScenario
+tournament_runner = TournamentRunner(world_manager)
+leaderboard = Leaderboard()
+experiment_runner = ExperimentRunner(world_manager)
 
 
 class AgentConfigRequest(BaseModel):
@@ -16,6 +22,10 @@ class AgentConfigRequest(BaseModel):
     risk_level: str = "medium"
     temperature: float = 0.7
 
+
+class RedTeamConfigRequest(BaseModel):
+    enabled: bool = False
+    attack_probability: float = 0.2
 
 class SimulationRequest(BaseModel):
     scenario_type: str = "price_negotiation"
@@ -28,11 +38,71 @@ class SimulationRequest(BaseModel):
     temperature: Optional[float] = 0.7
     buyer_config: Optional[AgentConfigRequest] = None
     seller_config: Optional[AgentConfigRequest] = None
+    red_team_config: Optional[RedTeamConfigRequest] = None
+
 
 
 @app.get("/")
 def read_root():
     return {"status": "ok", "message": "Backend is running"}
+
+
+# ─── Tournament Endpoints ───
+
+@app.post("/tournament/run")
+async def run_tournament(req: Dict):
+    print(f"DEBUG: Received /tournament/run request with {req}")
+    try:
+        # Extract fields from dict
+        strategies = req.get("strategies", ["aggressive", "balanced", "conservative", "adaptive"])
+        models = req.get("models", ["mistral"])
+        runs_per_match = req.get("runs_per_match", 1)
+        buyer_max = req.get("buyer_max", 150.0)
+        seller_min = req.get("seller_min", 100.0)
+
+        results = await tournament_runner.run_tournament(
+            strategies=strategies,
+            models=models,
+            runs_per_match=runs_per_match,
+            buyer_max=buyer_max,
+            seller_min=seller_min
+        )
+        print("DEBUG: Tournament complete, returning results.")
+        return {"status": "success", "data": results}
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ─── Experiment Endpoints ───
+
+@app.post("/experiment/run")
+async def run_experiment(req: Dict):
+    print(f"DEBUG: Received /experiment/run request: {req}")
+    try:
+        experiment_id = await experiment_runner.run_parameter_sweep(
+            experiment_name=req.get("name", "Unnamed Experiment"),
+            strategies=req.get("strategies", ["balanced"]),
+            temperatures=req.get("temperatures", [0.7]),
+            models=req.get("models", ["mistral"]),
+            runs_per_config=req.get("runs_per_config", 1)
+        )
+        return {"status": "success", "experiment_id": experiment_id}
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/experiment/list")
+def list_experiments():
+    return {"status": "success", "data": experiment_runner.list_experiments()}
+
+@app.get("/experiment/results/{experiment_id}")
+def get_experiment_results(experiment_id: str):
+    res = experiment_runner.get_experiment_results(experiment_id)
+    if not res:
+        raise HTTPException(status_code=404, detail="Experiment not found")
+    return {"status": "success", "data": res}
 
 
 @app.post("/simulation/start")
@@ -57,6 +127,12 @@ def start_simulation(req: SimulationRequest):
             temperature=req.seller_config.temperature if (req.seller_config and req.seller_config.temperature is not None) else temp,
         )
 
+        # Red Team Config
+        red_team_cfg = RedTeamConfig(
+            enabled=req.red_team_config.enabled if req.red_team_config else False,
+            attack_probability=req.red_team_config.attack_probability if req.red_team_config else 0.2
+        )
+
         config = SimulationConfig(
             buyer_max=req.buyer_max or 150.0,
             seller_min=req.seller_min or 100.0,
@@ -64,11 +140,14 @@ def start_simulation(req: SimulationRequest):
             negotiation_style=NegotiationStyle(req.negotiation_style or "formal"),
             buyer_config=buyer_agent_cfg,
             seller_config=seller_agent_cfg,
+            red_team_config=red_team_cfg,
             model_name=req.model_name or "mistral",
             temperature=temp,
         )
 
+        print(f"DEBUG: Starting simulation with config: {config.model_name}, red_team={config.red_team_config.enabled}")
         result = world_manager.start_simulation(scenario, config)
+        print(f"DEBUG: Simulation finished: {result['status']} in {result['turns']} turns.")
         return {"status": "success", "data": result}
     except Exception as e:
         import traceback
@@ -144,5 +223,26 @@ def export_dataset(format: str = "json"):
     else:
         rows = export_to_rows(replays)
         return {"status": "success", "total_rows": len(rows), "data": rows}
+
+@app.get("/agents/cards")
+def get_agent_cards():
+    """Agent discovery — returns all registered agent cards."""
+    from agents.card_loader import load_all_cards, check_compatibility
+    cards = load_all_cards()
+    # Auto-generate compatibility report if we have buyer + seller
+    buyer = next((c for c in cards if c.get("role") == "buyer"), None)
+    seller = next((c for c in cards if c.get("role") == "seller"), None)
+    compat = check_compatibility(buyer, seller) if buyer and seller else None
+    return {
+        "status": "success",
+        "agents": cards,
+        "compatibility": compat,
+    }
+
+# ─── Tournament Endpoints ───
+
+@app.get("/tournament/leaderboard")
+def get_leaderboard():
+    return {"status": "success", "data": leaderboard.get_rankings()}
 
 app.mount("/play", StaticFiles(directory="frontend", html=True), name="frontend")

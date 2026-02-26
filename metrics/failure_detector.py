@@ -27,7 +27,7 @@ class FailureType(str, Enum):
     PROTOCOL_VIOLATION = "protocol_violation"
 
 
-VALID_ACTIONS = {"offer", "counter_offer", "accept", "reject"}
+VALID_ACTIONS = {"proposal", "counter_proposal", "acceptance", "rejection", "information", "challenge"}
 
 
 class FailureDetector:
@@ -95,24 +95,24 @@ class FailureDetector:
                 f"Unrecognized action '{action_type}'. Expected one of: {', '.join(VALID_ACTIONS)}"
             )
 
-        # Accept/reject with a price attached
-        if action_type in ("accept", "reject") and action.get("price") is not None:
+        # Accept/rejection with a price attached
+        if action_type in ("acceptance", "rejection") and action.get("price") is not None:
             return self._make_failure(
                 FailureType.INVALID_ACTION, FailureSeverity.MEDIUM,
                 turn, agent,
                 f"Action '{action_type}' should not include a price (got ${action['price']})"
             )
 
-        # Protocol: first action must be offer
-        if len(history) == 0 and action_type not in ("offer",):
+        # Protocol: first action must be proposal
+        if len(history) == 0 and action_type not in ("proposal",):
             return self._make_failure(
                 FailureType.PROTOCOL_VIOLATION, FailureSeverity.HIGH,
                 turn, agent,
-                f"First action must be 'offer', got '{action_type}'"
+                f"First action must be 'proposal', got '{action_type}'"
             )
 
-        # Protocol: accept when no price on table
-        if action_type == "accept" and len(history) == 0:
+        # Protocol: acceptance when no price on table
+        if action_type == "acceptance" and len(history) == 0:
             return self._make_failure(
                 FailureType.PROTOCOL_VIOLATION, FailureSeverity.HIGH,
                 turn, agent,
@@ -137,8 +137,8 @@ class FailureDetector:
                     f"Unrecognized action '{action_type}'"
                 ))
 
-            # Accept/reject should not carry a price
-            if action_type in ("accept", "reject") and action.get("price") is not None:
+            # Acceptance/rejection should not carry a price
+            if action_type in ("acceptance", "rejection") and action.get("price") is not None:
                 self._failures.append(self._make_failure(
                     FailureType.INVALID_ACTION, FailureSeverity.MEDIUM,
                     step["turn"], step["agent"],
@@ -153,24 +153,24 @@ class FailureDetector:
         if not steps:
             return
 
-        # Rule: first action must be an offer
+        # Rule: first action must be a proposal
         first_action = (steps[0].get("action", {}).get("type")
                         or steps[0].get("action", {}).get("action"))
-        if first_action not in ("offer",):
+        if first_action not in ("proposal",):
             self._failures.append(self._make_failure(
                 FailureType.PROTOCOL_VIOLATION, FailureSeverity.HIGH,
                 steps[0]["turn"], steps[0]["agent"],
-                f"Negotiation must begin with 'offer', got '{first_action}'"
+                f"Negotiation must begin with 'proposal', got '{first_action}'"
             ))
 
-        # Rule: accept when no price has been set yet
+        # Rule: acceptance when no price has been set yet
         prices_seen = False
         for step in steps:
             action = step.get("action", {})
             action_type = action.get("type") or action.get("action")
             if action.get("price") is not None:
                 prices_seen = True
-            if action_type == "accept" and not prices_seen:
+            if action_type == "acceptance" and not prices_seen:
                 self._failures.append(self._make_failure(
                     FailureType.PROTOCOL_VIOLATION, FailureSeverity.HIGH,
                     step["turn"], step["agent"],

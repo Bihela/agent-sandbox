@@ -1,0 +1,69 @@
+{
+    "agent_name": "LLMSellerAgent",
+    "version": "1.0.0",
+    "framework": "agent-sandbox",
+    "protocol": "sandbox-v1",
+    "description": "An LLM-powered seller agent that negotiates to sell goods at the highest possible price above a strict minimum threshold.",
+    "role": "seller",
+    "capabilities": [
+        "price_negotiation",
+        "counter_offering",
+        "minimum_enforcement",
+        "strategy_adaptation"
+    ],
+    "strategy_options": [
+        "aggressive",
+        "balanced",
+        "conservative",
+        "adaptive",
+        "cooperative",
+        "analytical"
+    ],
+    "models_supported": [
+        "mistral",
+        "llama3",
+        "qwen2.5",
+        "gemma"
+    ],
+    "parameters": {
+        "min_price": {
+            "type": "float",
+            "required": true,
+            "description": "Minimum price the seller will accept"
+        },
+        "temperature": {
+            "type": "float",
+            "default": 0.7,
+            "range": [
+                0.0,
+                2.0
+            ],
+            "description": "LLM creativity/randomness control"
+        },
+        "strategy_name": {
+            "type": "string",
+            "default": "balanced",
+            "description": "Negotiation strategy module to use"
+        }
+    },
+    "input_schema": {
+        "type": "state",
+        "fields": [
+            "current_price"
+        ]
+    },
+    "output_schema": {
+        "type": "action",
+        "fields": [
+            "type",
+            "price",
+            "reasoning"
+        ]
+    },
+    "tags": [
+        "negotiation",
+        "seller",
+        "llm",
+        "ollama"
+    ]
+}

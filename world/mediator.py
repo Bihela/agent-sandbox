@@ -25,9 +25,9 @@ class Mediator:
             return {"stop": True, "reason": f"Invalid message format: {e}", "status": "error"}
 
         # 2. Check for agreement or rejection
-        if msg.type == MessageType.ACCEPT:
+        if msg.type == MessageType.ACCEPTANCE:
             return {"stop": True, "reason": "Agreement reached", "status": "success"}
-        elif msg.type == MessageType.REJECT:
+        elif msg.type == MessageType.REJECTION:
             return {"stop": True, "reason": "Offer rejected", "status": "failure"}
 
         # 3. Check for timeout / max turns
