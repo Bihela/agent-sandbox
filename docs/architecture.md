@@ -12,7 +12,7 @@ The Agent Sandbox is a multi-agent system backend built using FastAPI.
 ## Modular Structure
 - `backend/`: FastApi backend core application logic, settings, and main entries.
 - `agents/`: Agent implementations and behaviors.
-  - `agents/providers/`: [NEW] Pluggable LLM provider implementations (Ollama, OpenAI, Gemini, Groq).
+  - `agents/providers/`: Pluggable LLM provider implementations (Ollama, OpenAI, Gemini, Groq).
 - `world/`: Environment and world state definitions for the agents.
 - `scenarios/`: Specific simulation scenarios and workflows.
 - `metrics/`: Analytics and performance tracking of agent outcomes.
@@ -27,14 +27,14 @@ The Agent Sandbox is a multi-agent system backend built using FastAPI.
 - **Metrics Storage**: SQLAlchemy ORM for storing simulation results in a local SQLite database (`sandbox_metrics.db`), defined in `metrics/storage.py`. Stores simulation ID, agent names, outcome status, turn count, and final agreement price to build a historical dataset.
 - **Scenario Engine**: A flexible framework defined in `scenarios/base_scenario.py` allowing extensible simulation types.
   - `PriceNegotiationScenario`: Implements the base rules for a standardized 1-on-1 negotiation.
-  - `MultiVendorNegotiationScenario`: [NEW] Implements a 1-Buyer vs N-Vendor scenario, enabling the study of competitive undercutting and price wars.
+  - `MultiVendorNegotiationScenario`: Implements a 1-Buyer vs N-Vendor scenario, enabling the study of competitive undercutting and price wars.
 - **Simulation API**: Exposes four key endpoints in `backend/main.py` via FastAPI to interact with the engine.
   - `POST /simulation/start`: Kicks off a new specified negotiation scenario (e.g., `scenario_type="price_negotiation"`) returning live results.
   - `POST /simulation/batch`: Runs a specified scenario back-to-back `N` times (e.g., `runs=100`) and returns aggregated analytics (success rate, deadlocks, average turns, average price).
   - `GET /simulation/replay`: Returns all historical runs loaded into memory with their full sequential play-by-play steps.
   - `GET /simulation/{id}`: Retrieves the full history and details of a specific simulation run.
-  - `POST /scenario/create`: [NEW] API for dynamically generating and persisting custom negotiation scenarios.
-  - `GET /scenario/list`: [NEW] Retrieves all available core and user-defined custom scenarios.
+  - `POST /scenario/create`: API for dynamically generating and persisting custom negotiation scenarios.
+  - `GET /scenario/list`: Retrieves all available core and user-defined custom scenarios.
 - **Replay System**: Built-in tracking inside `world/world_manager.py` that records the precise agent actions, capturing the actor, turn number, and raw action state in a linear `steps` array, which is then exposed in the API outputs.
 - **Browser UI**: A responsive, vanilla HTML/JS/CSS frontend located in `frontend/index.html`. It is statically mounted and served via FastAPI at the `/play` endpoint. Features include:
   - **Global Command Header**: Centralized navigation for Ecoystem Discovery, Performance Arena, and Intelligence Hub.
@@ -48,7 +48,7 @@ The Agent Sandbox is a multi-agent system backend built using FastAPI.
   - **Runtime Execution**: The `world_manager.py` defaults to running `LLMBuyerAgent` and `LLMSellerAgent` to demonstrate the active AI capabilities.
 - **Mediator Engine**: Enforces simulation logic in `world/mediator.py`. Crucially, this remains **strictly rule-based**. Even when LLMs propose actions, the Mediator validates formats, halts infinite loops, and acts as the unbribable referee before the World Manager executes state changes.
 - **Failure Detection Engine**: A research-grade failure taxonomy system in `metrics/failure_detector.py` that performs post-simulation analysis across 5 failure categories: `loop_failure` (identical/stagnant prices), `deadlock` (diverging price gaps), `irrational_concession` (agents acting against own interests), `invalid_action` (malformed messages), and `protocol_violation` (rule-breaking sequences). Produces a risk score (0-100) and detailed per-turn failure cards displayed in the frontend.
-- **Multi-Provider LLM System**: [NEW] A pluggable architecture in `agents/providers/` that abstracts LLM interactions.
+- **Multi-Provider LLM System**: A pluggable architecture in `agents/providers/` that abstracts LLM interactions.
   - `BaseProvider`: Defines a standard chat interface and model discovery.
   - `ProviderFactory`: Manages lazy-loading of providers, ensuring the system remains stable even if cloud SDKs (OpenAI, Gemini) are missing.
   - **Supported Backends**: Ollama (local), OpenAI, Google Gemini, and Groq (high-speed).
@@ -63,7 +63,7 @@ The Agent Sandbox is a multi-agent system backend built using FastAPI.
   - **Intelligence Hub View**: A dedicated, full-screen dashboard in the UI for visualizing global strategy effectiveness, model benchmarks, and detailed ranking metrics.
 - **Red Team Adversarial Engine**: A specialized `RedTeamAgent` that acts as a "Man-in-the-Middle" during simulations. It disrupts negotiations by injecting wrong numbers, fake constraints, or protocol violations based on a configurable attack probability. This allows stress-testing of the `FailureDetector` and observation of how strategies handle deception.
 - **Experiment Research Engine**: A high-level orchestrator (`ExperimentRunner`) that performs complex parameter sweeps (Grid Search) across multiple variables (temperature, strategies, models). Results are aggregated into structured JSON datasets for scientific analysis of model convergence and behavior.
-- **Simulation Scheduler**: [NEW] A persistent queue system in `simulation_queue/` that enables long-running background experiments. 
+- **Simulation Scheduler**: A persistent queue system in `simulation_queue/` that enables long-running background experiments. 
   - `SimulationJob`: Database model for tracking job state (pending, running, completed, failed).
   - `SimulationWorker`: Background thread that processes jobs from the queue sequentially.
   - Endpoints: `POST /simulation/schedule`, `GET /queue/status`, `GET /queue/recent`.

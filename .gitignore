@@ -1,0 +1,35 @@
+# --- Local Data & Databases ---
+sandbox_metrics.db
+data/leaderboard.json
+data/scenarios.json
+data/experiments/
+
+# --- Personal & Environment ---
+Wanasekara/
+.env
+venv/
+.venv/
+env/
+
+# --- Documentation (Vibecoding / AI logs) ---
+docs/
+
+# --- Temporary & Build Artifacts ---
+tmp/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+
+# --- IDE Configs ---
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# --- System Files ---
+.DS_Store
+Thumbs.db

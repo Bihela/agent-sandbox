@@ -5,6 +5,10 @@ from telemetry_module.telemetry import tracer, collector
 
 
 class LLMAgent(Agent):
+    """
+    An LLM-powered agent capable of negotiation using pluggable providers and strategies.
+    Inherits from the base Agent class and implements the ACP (Agent Communication Protocol).
+    """
     def __init__(self, name, role, temperature=0.7, strategy_name="balanced",
                  risk_prompt="", style_prompt="", model="mistral", provider_name=None, **kwargs):
         super().__init__(name)
@@ -28,7 +32,16 @@ class LLMAgent(Agent):
         self._sim_id = None  # Set by WorldManager before simulation starts
         self._role_type = "seller" if "seller" in role.lower() else "buyer"
 
-    def decide_action(self, state):
+    def decide_action(self, state: dict) -> dict:
+        """
+        Determines the next negotiation action based on the current world state.
+        
+        Args:
+            state: Dictionary containing the current price and history.
+            
+        Returns:
+            A dictionary containing the action type, price, and reasoning.
+        """
         current_price = state.get('price', state.get('current_price', 'None yet'))
 
         # Build behavioral modifiers from strategy + config
@@ -74,13 +87,11 @@ Respond in EXACT JSON format with no markdown wrappers or other text:
             }
         ) as span:
             try:
-                print(f"DEBUG: [{self.name}] Calling {type(self.provider).__name__} ({self.model})...")
                 response_data = self.provider.chat(
                     model=self.model,
                     messages=self.history,
                     temperature=self.temperature
                 )
-                print(f"DEBUG: [{self.name}] Provider response received.")
 
                 generated_text = response_data.get("content", "")
                 tokens_used = response_data.get("tokens_used", 0)
@@ -153,7 +164,7 @@ Respond in EXACT JSON format with no markdown wrappers or other text:
                 span.set_attribute("agent.error", str(e))
                 span.set_attribute("agent.fallback", True)
 
-                print(f"[{self.name}] Ollama Error: {e} - Using strategy fallback ({self.strategy.name}).")
+                # Fallback logic for provider failures
 
                 latency_ms = (time.perf_counter() - start_time) * 1000
                 if self._sim_id:

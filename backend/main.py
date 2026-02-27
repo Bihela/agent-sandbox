@@ -1,3 +1,9 @@
+"""
+Agent Sandbox Backend
+----------------------
+Core API server for the Agent Sandbox ecosystem. This module provides endpoints for 
+simulation orchestration, tournament management, and research-grade analytics.
+"""
 from __future__ import annotations
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
@@ -19,6 +25,9 @@ import logging
 import threading
 import json
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 SCENARIOS_FILE = "data/scenarios.json"
 
@@ -32,18 +41,23 @@ worker = None
 
 @app.on_event("startup")
 def startup_event():
+    """Initializes background workers and logging on application startup."""
     global worker
     worker = SimulationWorker(world_manager)
     worker.start()
-    print("DEBUG: Background simulation worker started.")
+    logging.info("Background simulation worker initialized.")
 
 @app.on_event("shutdown")
 def shutdown_event():
+    """Gracefully shuts down background workers on application exit."""
+    if worker:
+        worker.stop()
     if worker:
         worker.stop()
 
 
 class AgentConfigRequest(BaseModel):
+    """Request model for defining a single agent's configuration."""
     name: Optional[str] = None
     role: str = "negotiator"
     strategy: str = "adaptive"
@@ -57,12 +71,12 @@ class RedTeamConfigRequest(BaseModel):
     attack_probability: float = 0.2
 
 class SimulationRequest(BaseModel):
+    """Parameters for initiating a new negotiation simulation."""
     scenario_type: str = "price_negotiation"
     buyer_max: Optional[float] = 150.0
     seller_min: Optional[float] = 100.0
     num_vendors: Optional[int] = 2
     max_turns: Optional[int] = 20
-    # Config fields
     negotiation_style: Optional[str] = "formal"
     model_name: Optional[str] = "mistral"
     temperature: Optional[float] = 0.7
@@ -107,7 +121,7 @@ def read_root():
 
 @app.post("/tournament/run")
 async def run_tournament(req: Dict):
-    print(f"DEBUG: Received /tournament/run request with {req}")
+    """Orchestrates an automated round-robin tournament between strategies."""
     try:
         # Extract fields from dict
         strategies = req.get("strategies", ["aggressive", "balanced", "conservative", "adaptive"])
@@ -123,7 +137,6 @@ async def run_tournament(req: Dict):
             buyer_max=buyer_max,
             seller_min=seller_min
         )
-        print("DEBUG: Tournament complete, returning results.")
         return {"status": "success", "data": results}
     except Exception as e:
         import traceback
@@ -134,7 +147,7 @@ async def run_tournament(req: Dict):
 
 @app.post("/experiment/run")
 async def run_experiment(req: Dict):
-    print(f"DEBUG: Received /experiment/run request: {req}")
+    """Initiates a parameter sweep experiment across multiple LLM configurations."""
     try:
         experiment_id = await experiment_runner.run_parameter_sweep(
             experiment_name=req.get("name", "Unnamed Experiment"),
@@ -164,6 +177,7 @@ def get_experiment_results(experiment_id: str):
 
 @app.post("/scenario/create")
 def create_scenario(req: ScenarioCreateRequest):
+    """Persists a new user-defined negotiation scenario to the library."""
     try:
         scenarios = []
         if os.path.exists(SCENARIOS_FILE):
@@ -212,6 +226,7 @@ def list_scenarios():
 
 @app.post("/simulation/start")
 def start_simulation(req: SimulationRequest):
+    """Stateful entry point for starting a real-time negotiation simulation."""
     try:
         if req.scenario_type == "price_negotiation":
             scenario = PriceNegotiationScenario(buyer_max=req.buyer_max, seller_min=req.seller_min, max_turns=req.max_turns)
@@ -292,9 +307,7 @@ def start_simulation(req: SimulationRequest):
             red_team_config=red_team_cfg
         )
 
-        print(f"DEBUG: Starting simulation with config: {config.model_name}, red_team={config.red_team_config.enabled}")
         result = world_manager.start_simulation(scenario, config)
-        print(f"DEBUG: Simulation finished: {result['status']} in {result['turns']} turns.")
         return {"status": "success", "data": result}
     except Exception as e:
         import traceback

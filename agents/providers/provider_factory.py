@@ -2,6 +2,11 @@ from typing import Dict, List, Optional
 from agents.providers.base_provider import BaseProvider
 
 class ProviderFactory:
+    """
+    Factory for managing LLM provider instances.
+    Supports lazy-loading to ensure the system remains stable even if 
+    specific provider SDKs are not installed locally.
+    """
     _instances: Dict[str, BaseProvider] = {}
 
     @classmethod

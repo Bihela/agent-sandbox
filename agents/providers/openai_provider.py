@@ -4,7 +4,10 @@ from typing import List, Dict, Any
 from agents.providers.base_provider import BaseProvider
 
 class OpenAIProvider(BaseProvider):
-    """Provider for OpenAI GPT models."""
+    """
+    Provider for OpenAI GPT models.
+    Requires an 'OPENAI_API_KEY' environment variable.
+    """
     
     def __init__(self, api_key: str = None):
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")

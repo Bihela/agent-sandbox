@@ -9,6 +9,12 @@ from configs.simulation_config import SimulationConfig, DEFAULT_CONFIG
 from telemetry_module.telemetry import tracer, collector
 
 class WorldManager:
+    """
+    The central orchestration engine for the Agent Sandbox.
+    
+    Responsible for initializing agents, managing the negotiation environment,
+    and recording simulation results.
+    """
     def __init__(self):
         self.results = []
         # In-memory storage for replays
@@ -17,7 +23,14 @@ class WorldManager:
 
     def start_simulation(self, scenario: Any, config: Optional[SimulationConfig] = None) -> dict:
         """
-        Core entry point to start the simulation with a defined Scenario
+        Initiates a simulation with a specific scenario and configuration.
+        
+        Args:
+            scenario: The negotiation scenario to run (e.g., PriceNegotiationScenario).
+            config: Optional SimulationConfig for agent behaviors and global settings.
+            
+        Returns:
+            A dictionary containing the simulation history, status, and telemetry.
         """
         if config is None:
             config = DEFAULT_CONFIG
@@ -199,7 +212,6 @@ class WorldManager:
 
         while not finished and turn_count < mediator.max_turns:
             for idx, current_agent in enumerate(participants):
-                print(f"DEBUG: Turn {turn_count + 1} - {current_agent.name}")
                 
                 # In multi-agent, we need to decide who the receiver is.
                 # Simplest model: Next agent in list (round-robin) or broadcast.
@@ -213,7 +225,6 @@ class WorldManager:
                 
                 # ─── RED TEAM DISRUPTION ───
                 if config.red_team_config.enabled and random.random() < config.red_team_config.attack_probability:
-                    print(f"DEBUG: Disrupting {current_agent.name}'s action...")
                     action_dict = self.red_team.disrupt(action_dict, config.red_team_config.attack_types)
 
                 steps.append({
@@ -225,7 +236,6 @@ class WorldManager:
                 
                 mediator_check = mediator.check_turn(action_dict)
                 if mediator_check["stop"]:
-                    print(f"DEBUG: Mediator stop ({current_agent.name}): {mediator_check['reason']}")
                     return {
                         "status": mediator_check["status"], 
                         "turns": turn_count + 1, 

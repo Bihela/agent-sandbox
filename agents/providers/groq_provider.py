@@ -4,7 +4,10 @@ from typing import List, Dict, Any
 from agents.providers.base_provider import BaseProvider
 
 class GroqProvider(BaseProvider):
-    """Provider for ultra-fast Groq-hosted models."""
+    """
+    Provider for ultra-fast Groq-hosted models.
+    Requires a 'GROQ_API_KEY' environment variable.
+    """
     
     def __init__(self, api_key: str = None):
         self.api_key = api_key or os.getenv("GROQ_API_KEY")

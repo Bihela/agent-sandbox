@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+pydantic
+sqlalchemy
+ollama
+openai
+google-generativeai
+opentelemetry-api
+opentelemetry-sdk
+requests
+jinja2
+python-dotenv

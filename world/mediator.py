@@ -4,6 +4,10 @@ from metrics.failure_detector import FailureDetector
 
 
 class Mediator:
+    """
+    Arbitrates negotiation sessions by enforcing rules, validating messages,
+    and detecting termination conditions (agreement, rejection, timeout, or loops).
+    """
     def __init__(self, max_turns: int = 20, num_participants: int = 2):
         self.max_turns = max_turns
         self.num_participants = num_participants

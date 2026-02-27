@@ -19,9 +19,9 @@
       "concessions": 0
     },
     "adaptive": {
-      "runs": 12,
+      "runs": 14,
       "agreements": 0,
-      "total_turns": 84,
+      "total_turns": 88,
       "concessions": 0
     },
     "analytical": {
@@ -32,12 +32,12 @@
   },
   "models": {
     "mistral": {
-      "runs": 29,
+      "runs": 30,
       "agreements": 0,
-      "avg_latency_ms": 8629.820689655173
+      "avg_latency_ms": 8815.24
     }
   },
-  "last_updated": "2026-02-27T00:07:42.895232",
+  "last_updated": "2026-02-27T14:36:11.554850",
   "h2h_strategies": {
     "aggressive_vs_balanced": {
       "runs": 5,
@@ -53,6 +53,10 @@
     },
     "adaptive_vs_analytical": {
       "runs": 2,
+      "agreements": 0
+    },
+    "adaptive_vs_adaptive": {
+      "runs": 1,
       "agreements": 0
     }
   },
