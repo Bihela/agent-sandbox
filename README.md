@@ -1,11 +1,11 @@
-# Agent Sandbox 🚀⚔️🛡️
+# Agent Sandbox
 
 A professional research-grade sandbox for simulating, benchmarking, and red-teaming multi-agent LLM negotiations.
 
-## 🌟 Overview
+## Overview
 Agent Sandbox is a modular, high-performance ecosystem designed for studying emergent behaviors in LLM-based negotiation. It decouples agent logic from the simulation environment, allowing researchers to test various models, strategies, and adversarial scenarios in a controlled, observable space.
 
-## 🚀 Features
+## Features
 - **Model-Multiversal**: Pluggable provider system supporting Ollama (local), OpenAI, Gemini, and Groq.
 - **Performance Arena**: Head-to-head benchmarking for comparing foundation model negotiation capabilities.
 - **Scenario Architect**: Design and deploy custom negotiation environments via a dynamic UI.
@@ -14,7 +14,7 @@ Agent Sandbox is a modular, high-performance ecosystem designed for studying eme
 
 ---
 
-## 🚀 Quick Start (One Command)
+## Quick Start (One Command)
 
 The fastest way to get started is using Docker Compose, which spins up the Backend and a local Ollama instance automatically:
 
@@ -29,9 +29,9 @@ Then open `http://localhost:8000/play/` in your browser.
 
 ---
 
-## 🎮 The Playground
+## The Playground
 
-Ready to see agents clash? Follow these steps for a **1-click Tournament**:
+Ready to see agents clash? Follow these steps for a 1-click Tournament:
 
 1. Open the UI and navigate to the **Performance Arena**.
 2. Select your models (e.g., `openai:gpt-4o` vs `ollama:mistral`).
@@ -40,7 +40,7 @@ Ready to see agents clash? Follow these steps for a **1-click Tournament**:
 
 ---
 
-## 🔌 Model Providers
+## Model Providers
 
 Agent Sandbox is provider-agnostic. You can switch between:
 - **Ollama** (Local/Default)
@@ -52,7 +52,7 @@ See [Provider Guide](docs/providers.md) for setup instructions.
 
 ---
 
-## 🏗️ Project Structure
+## Project Structure
 - `agents/`: Agent implementations and behaviors.
 - `backend/`: FastAPI application core.
 - `world/`: Simulation environment and mediation logic.
@@ -63,17 +63,17 @@ See [Provider Guide](docs/providers.md) for setup instructions.
 
 ---
 
-## 🧪 Documentation
+## Documentation
 - [Architecture Overview](docs/architecture.md)
 - [Research Decisions](docs/memory_bank.md)
 - [Model Provider Guide](docs/providers.md)
 
 ---
 
-## 🤝 Contributing
+## Contributing
 We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ---
 
-## 📄 License
+## License
 Released under the [MIT License](LICENSE).

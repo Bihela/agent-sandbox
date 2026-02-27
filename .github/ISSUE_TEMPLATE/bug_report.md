@@ -1,5 +1,5 @@
 ---
-name: 🐛 Bug Report
+name: Bug Report
 about: Create a report to help us improve Agent Sandbox
 title: '[BUG] '
 labels: bug

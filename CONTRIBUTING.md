@@ -1,11 +1,11 @@
-# Contributing to Agent Sandbox 🤝
+# Contributing to Agent Sandbox
 
 Thank you for your interest in contributing to the Agent Sandbox! This project is designed to be a collaborative ecosystem for LLM negotiation research.
 
-## 🌈 Code of Conduct
+## Code of Conduct
 Please be respectful and professional in all interactions. We aim to build a welcoming community for researchers and developers alike.
 
-## 🚀 How Can I Contribute?
+## How Can I Contribute?
 
 ### Reporting Bugs
 - Use the **Bug Report** template.
@@ -22,7 +22,7 @@ Please be respectful and professional in all interactions. We aim to build a wel
 3. If you add a new Model Provider, include a sample configuration in `docs/providers.md`.
 4. Run tests and linting (see below) before submitting.
 
-## 🛠️ Development Setup
+## Development Setup
 
 1. Install dependencies:
    ```bash
@@ -33,11 +33,11 @@ Please be respectful and professional in all interactions. We aim to build a wel
    python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
    ```
 
-## 🧪 Testing
+## Testing
 We use `pytest` for unit and integration tests.
 ```bash
 pytest scripts/test_api.py
 ```
 
-## ⚖️ License
+## License
 By contributing, you agree that your contributions will be licensed under the project's [MIT License](LICENSE).

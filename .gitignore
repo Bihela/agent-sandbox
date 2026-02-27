@@ -11,8 +11,13 @@ venv/
 .venv/
 env/
 
-# --- Documentation (Vibecoding / AI logs) ---
-docs/
+# --- Documentation ---
+# Ignore everything in docs/ by default for personal vibecoding
+docs/*
+# But allow the public research documentation
+!docs/architecture.md
+!docs/memory_bank.md
+!docs/providers.md
 
 # --- Temporary & Build Artifacts ---
 tmp/
