@@ -20,5 +20,16 @@
         "max_turns": 20,
         "goal": "maximize_efficiency",
         "custom_params": {}
+    },
+    {
+        "id": "industrial_test_hub",
+        "name": "Industrial Test Hub",
+        "description": "Custom stakes for automated testing.",
+        "buyer_max": 300.0,
+        "seller_min": 50.0,
+        "num_vendors": 1,
+        "max_turns": 20,
+        "goal": "maximize_efficiency",
+        "custom_params": {}
     }
 ]

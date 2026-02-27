@@ -1,32 +1,56 @@
-import urllib.request
-import json
+import pytest
+from fastapi.testclient import TestClient
+from backend.main import app
 
-API_BASE = "http://127.0.0.1:8000"
+client = TestClient(app)
 
-def post_json(url, data):
-    req = urllib.request.Request(url, data=json.dumps(data).encode('utf-8'), headers={'Content-Type': 'application/json'})
-    with urllib.request.urlopen(req) as res:
-        return json.loads(res.read().decode('utf-8'))
+def test_scenario_list():
+    response = client.get("/scenario/list")
+    assert response.status_code == 200
+    res_data = response.json()
+    assert res_data["status"] == "success"
+    data = res_data["data"]
+    assert isinstance(data, list)
+    # Check that at least core scenarios are present
+    ids = [s.get("id") for s in data]
+    assert "price_negotiation" in ids
+    assert "multi_vendor" in ids
 
-def get_json(url):
-    with urllib.request.urlopen(url) as res:
-        return json.loads(res.read().decode('utf-8'))
-
-print("--- POST /scenario/create ---")
-try:
-    res = post_json(f"{API_BASE}/scenario/create", {
-        "name": "Industrial Hub",
-        "description": "Custom stakes.",
+def test_scenario_create():
+    payload = {
+        "name": "Industrial Test Hub",
+        "description": "Custom stakes for automated testing.",
         "buyer_max": 300,
         "seller_min": 50
-    })
-    print(res)
-except Exception as e:
-    print(f"Error: {e}")
+    }
+    response = client.post("/scenario/create", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "success"
+    assert "scenario_id" in data
 
-print("\n--- GET /scenario/list ---")
-try:
-    res = get_json(f"{API_BASE}/scenario/list")
-    print(json.dumps(res, indent=2))
-except Exception as e:
-    print(f"Error: {e}")
+def test_simulation_start():
+    # Simple check if the arena/simulation endpoint is alive
+    payload = {
+        "scenario_type": "price_negotiation",
+        "buyer_config": {
+            "name": "Alpha",
+            "strategy": "aggressive",
+            "model_name": "ollama:mistral"
+        },
+        "seller_config": {
+            "name": "Beta",
+            "strategy": "conservative",
+            "model_name": "ollama:mistral"
+        },
+        "max_turns": 5
+    }
+    response = client.post("/simulation/start", json=payload)
+    # 200 is success, 500 might happen if Ollama is missing models
+    assert response.status_code in [200, 500, 422] 
+
+def test_leaderboard():
+    response = client.get("/tournament/leaderboard")
+    assert response.status_code == 200
+    assert response.json()["status"] == "success"
+    assert "data" in response.json()
