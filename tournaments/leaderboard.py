@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import List, Dict, Any
 from datetime import datetime
 
-LEADERBOARD_FILE = Path("c:/Users/Harsha Wanasekara/Documents/agent-sandbox/agent-sandbox/data/leaderboard.json")
+LEADERBOARD_FILE = Path("data/leaderboard.json")
 
 class Leaderboard:
     def __init__(self):

@@ -8,7 +8,7 @@ from world.world_manager import WorldManager
 from scenarios.price_negotiation import PriceNegotiationScenario
 from configs.simulation_config import SimulationConfig, AgentConfig, StrategyType, RiskLevel, NegotiationStyle
 
-EXPERIMENTS_DIR = Path("c:/Users/Harsha Wanasekara/Documents/agent-sandbox/agent-sandbox/data/experiments")
+EXPERIMENTS_DIR = Path("data/experiments")
 
 class ExperimentRunner:
     def __init__(self, world_manager: WorldManager):
