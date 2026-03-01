@@ -44,7 +44,7 @@ workers: List[SimulationWorker] = []
 def startup_event():
     """Initializes background workers and logging on application startup."""
     global workers
-    num_workers = 1 # Reducing local workers to 1 to save CPU; remote workers will do the heavy lifting.
+    num_workers = 4 # Reverted to 4 as requested. The PC will help the Colabs.
     for i in range(num_workers):
         w = SimulationWorker(world_manager)
         w.name = f"SimulationWorker-{i+1}"

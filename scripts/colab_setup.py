@@ -41,6 +41,16 @@ time.sleep(10) # Wait for server to start
 # Replace with your localtunnel URL from Step 1
 BACKEND_URL = "INSERT_YOUR_TUNNEL_URL_HERE"
 
-# 6. Run the worker
+# 6. Run Multiple Workers (T4 can easily handle 2-3 workers for these models)
 # We set PYTHONPATH to the project root so it can find 'world', 'agents', etc.
-!export PYTHONPATH={PROJECT_ROOT} && python scripts/remote_worker.py {BACKEND_URL}
+import os
+os.environ["PYTHONPATH"] = PROJECT_ROOT
+
+# Launching 3 workers in the background to maximize GPU usage
+for i in range(3):
+    subprocess.Popen(["python", "scripts/remote_worker.py", BACKEND_URL])
+    print(f"🚀 Worker {i+1} started.")
+
+# Keep the cell alive
+while True:
+    time.sleep(60)
