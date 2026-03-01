@@ -26,7 +26,7 @@ class BalancedStrategy(BaseStrategy):
     def compute_fallback_action(self, role: str, current_price: float,
                                  budget_limit: float) -> dict:
         if role == "buyer":
-            if current_price <= budget_limit * 0.9:
+            if current_price <= budget_limit * 0.9 and getattr(self, "turn_count", 2) > 1:
                 return {"type": "acceptance", "price": None,
                         "reasoning": f"Price ${current_price} is within 90% of budget — good deal."}
             return {"type": "counter_proposal", "price": round(current_price * 0.90, 2),

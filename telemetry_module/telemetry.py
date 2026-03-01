@@ -91,7 +91,7 @@ class TelemetryCollector:
 
     def record_decision(self, sim_id: str, agent: str, latency_ms: float,
                          tokens: int = 0, error: bool = False, fallback: bool = False,
-                         model: str = ""):
+                         model: str = "", reasoning_length: int = 0):
         """Record an individual agent decision with metrics."""
         if sim_id not in self._sim_telemetry:
             return
@@ -104,6 +104,7 @@ class TelemetryCollector:
             "error": error,
             "fallback": fallback,
             "model": model,
+            "reasoning_length": reasoning_length,
         })
         tel["total_llm_calls"] += 1
         if error:
@@ -131,7 +132,14 @@ class TelemetryCollector:
         tel = self._sim_telemetry[sim_id]
         elapsed = (time.time() - tel["start_time"]) * 1000  # ms
 
-        # Compute negotiation complexity
+        # Average decision latency & reasoning depth
+        latencies = [d["latency_ms"] for d in tel["agent_decisions"]]
+        reasoning_lengths = [d["reasoning_length"] for d in tel["agent_decisions"]]
+        
+        avg_latency = round(sum(latencies) / len(latencies), 1) if latencies else 0
+        avg_reasoning = round(sum(reasoning_lengths) / len(reasoning_lengths), 1) if reasoning_lengths else 0
+
+        # Compute negotiation complexity (Restored)
         prices = [s["action"].get("price") for s in steps if s.get("action", {}).get("price") is not None]
         unique_prices = len(set(prices)) if prices else 0
         price_range = (max(prices) - min(prices)) if len(prices) >= 2 else 0
@@ -139,24 +147,14 @@ class TelemetryCollector:
         range_ratio = price_range / avg_price if avg_price > 0 else 0
         complexity_score = round(turns * unique_prices * max(range_ratio, 0.1), 2)
 
-        # Feed OTel
-        simulation_counter.add(1)
-        negotiation_complexity.record(complexity_score)
-
-        # Average decision latency
-        latencies = [d["latency_ms"] for d in tel["agent_decisions"]]
-        avg_latency = round(sum(latencies) / len(latencies), 1) if latencies else 0
-        max_latency = round(max(latencies), 1) if latencies else 0
-
         summary = {
             "simulation_duration_ms": round(elapsed, 1),
             "avg_decision_latency_ms": avg_latency,
-            "max_decision_latency_ms": max_latency,
+            "avg_reasoning_depth": avg_reasoning,
             "total_llm_calls": tel["total_llm_calls"],
             "total_errors": tel["total_errors"],
             "total_fallbacks": tel["total_fallbacks"],
             "total_tokens": tel["total_tokens"],
-            "negotiation_complexity": complexity_score,
             "decisions": tel["agent_decisions"],
         }
 

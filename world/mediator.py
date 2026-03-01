@@ -31,7 +31,7 @@ class Mediator:
 
         # 2. Check for agreement or rejection
         if msg.type == MessageType.ACCEPTANCE:
-            return {"stop": True, "reason": "Agreement reached", "status": "success"}
+            return {"stop": True, "reason": "Agreement reached", "status": "agreement"}
         elif msg.type == MessageType.REJECTION:
             return {"stop": True, "reason": "Offer rejected", "status": "failure"}
 

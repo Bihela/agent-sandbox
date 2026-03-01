@@ -14,7 +14,7 @@ class GeminiProvider(BaseProvider):
         if self.api_key:
             genai.configure(api_key=self.api_key)
 
-    def chat(self, model: str, messages: List[Dict[str, str]], temperature: float = 0.7) -> Dict[str, Any]:
+    def chat(self, model: str, messages: List[Dict[str, str]], temperature: float = 0.7, seed: int = None) -> Dict[str, Any]:
         if not self.api_key:
             raise ValueError("Gemini API key not set.")
             

@@ -16,15 +16,26 @@ class GroqProvider(BaseProvider):
             api_key=self.api_key
         ) if self.api_key else None
 
-    def chat(self, model: str, messages: List[Dict[str, str]], temperature: float = 0.7) -> Dict[str, Any]:
+    def chat(self, model: str, messages: List[Dict[str, str]], temperature: float = 0.7, seed: int = None) -> Dict[str, Any]:
         if not self.client:
             raise ValueError("Groq API key not set.")
             
-        response = self.client.chat.completions.create(
-            model=model,
-            messages=messages,
-            temperature=temperature
-        )
+        # Map internal names to Groq-specific names
+        model_map = {
+            "llama3": "llama-3.1-8b-instant",
+            "mistral": "llama-3.3-70b-versatile" # High-quality substitute
+        }
+        api_model = model_map.get(model.lower(), model)
+
+        kwargs = {
+            "model": api_model,
+            "messages": messages,
+            "temperature": temperature
+        }
+        if seed is not None:
+            kwargs["seed"] = seed
+
+        response = self.client.chat.completions.create(**kwargs)
         
         content = response.choices[0].message.content
         tokens = response.usage.total_tokens
@@ -36,4 +47,4 @@ class GroqProvider(BaseProvider):
         }
 
     def get_available_models(self) -> List[str]:
-        return ["llama3-70b-8192", "llama3-8b-8192", "mixtral-8x7b-32768"]
+        return ["llama-3.1-8b-instant", "llama-3.3-70b-versatile", "qwen/qwen3-32b"]

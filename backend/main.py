@@ -37,23 +37,29 @@ tournament_runner = TournamentRunner(world_manager)
 leaderboard = Leaderboard()
 experiment_runner = ExperimentRunner(world_manager)
 
-worker = None
+# Global list of workers
+workers: List[SimulationWorker] = []
 
 @app.on_event("startup")
 def startup_event():
     """Initializes background workers and logging on application startup."""
-    global worker
-    worker = SimulationWorker(world_manager)
-    worker.start()
-    logging.info("Background simulation worker initialized.")
+    global workers
+    num_workers = min(os.cpu_count() or 1, 4) # Target 4 workers for parallel speed
+    for i in range(num_workers):
+        w = SimulationWorker(world_manager)
+        w.name = f"SimulationWorker-{i+1}"
+        w.start()
+        workers.append(w)
+    
+    logging.info(f"Initialized {len(workers)} background simulation workers.")
 
 @app.on_event("shutdown")
 def shutdown_event():
     """Gracefully shuts down background workers on application exit."""
-    if worker:
-        worker.stop()
-    if worker:
-        worker.stop()
+    global workers
+    for w in workers:
+        w.stop()
+    logging.info("Signaled all workers to stop.")
 
 
 class AgentConfigRequest(BaseModel):
@@ -80,6 +86,7 @@ class SimulationRequest(BaseModel):
     negotiation_style: Optional[str] = "formal"
     model_name: Optional[str] = "mistral"
     temperature: Optional[float] = 0.7
+    seed: Optional[int] = None
     buyer_config: Optional[AgentConfigRequest] = None
     seller_config: Optional[AgentConfigRequest] = None
     agents_configs: Optional[List[AgentConfigRequest]] = None
@@ -321,7 +328,7 @@ def schedule_simulation(req: ScheduleRequest):
     try:
         # Convert Pydantic request to dict for storage
         config_dict = req.config.dict()
-        jobs = QueueManager.schedule_simulations(
+        result = QueueManager.schedule_simulations(
             scenario_type=req.scenario_type,
             config=config_dict,
             count=req.count,
@@ -329,8 +336,8 @@ def schedule_simulation(req: ScheduleRequest):
         )
         return {
             "status": "success", 
-            "message": f"Enqueued {len(jobs)} simulations.",
-            "job_ids": [j.id for j in jobs]
+            "message": f"Enqueued {result['job_count']} simulations.",
+            "batch_id": result["batch_id"]
         }
     except Exception as e:
         import traceback
@@ -346,6 +353,47 @@ def get_queue_status():
 def get_recent_jobs(limit: int = 50):
     """Returns detailed status of recent jobs."""
     return {"status": "success", "data": QueueManager.get_recent_jobs(limit)}
+
+
+@app.get("/batch/{batch_id}/progress")
+def get_batch_progress(batch_id: str):
+    """Returns the progress of a specific simulation batch with ETA."""
+    from metrics.storage import SessionLocal, SimulationJob
+    from sqlalchemy import func
+    
+    db = SessionLocal()
+    try:
+        jobs = db.query(SimulationJob).filter(SimulationJob.batch_id == batch_id).all()
+        if not jobs:
+            raise HTTPException(status_code=404, detail="Batch not found")
+            
+        stats = {
+            "pending": 0, "running": 0, "completed": 0, "failed": 0, "total": len(jobs)
+        }
+        total_duration = 0
+        
+        for j in jobs:
+            stats[j.status] += 1
+            if j.status == "completed" and j.started_at and j.completed_at:
+                total_duration += (j.completed_at - j.started_at).total_seconds()
+        
+        avg_duration = total_duration / stats["completed"] if stats["completed"] > 0 else 0
+        remaining = stats["pending"] + stats["running"]
+        eta_seconds = avg_duration * remaining
+        
+        return {
+            "status": "success",
+            "data": {
+                "batch_id": batch_id,
+                "progress_pct": round((stats["completed"] + stats["failed"]) / stats["total"] * 100, 1),
+                "stats": stats,
+                "avg_duration_sec": round(avg_duration, 1),
+                "eta_seconds": round(eta_seconds, 1),
+                "is_complete": remaining == 0
+            }
+        }
+    finally:
+        db.close()
 
 
 class BatchSimulationRequest(SimulationRequest):
@@ -534,5 +582,46 @@ def start_arena_battle(req: BattleRequest):
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/queue/acquire")
+def acquire_job():
+    """Endpoint for remote workers to atomically acquire a job."""
+    from metrics.storage import acquire_next_job
+    job = acquire_next_job()
+    if not job:
+        raise HTTPException(status_code=404, detail="No pending jobs")
+    return {
+        "status": "success",
+        "job": {
+            "id": job.id,
+            "scenario_type": job.scenario_type,
+            "config_json": job.config_json
+        }
+    }
+
+@app.post("/queue/submit/{job_id}")
+def submit_job_result(job_id: int, req: Dict):
+    """Endpoint for remote workers to submit results."""
+    from metrics.storage import update_job_status, save_simulation_result
+    
+    status = req.get("status")
+    sim_id = req.get("sim_id")
+    error = req.get("error")
+    
+    # If the remote worker already saved the result to a shared DB (future), 
+    # we just update the job status. But for now, we expect full telemetry.
+    result_data = req.get("result_data")
+    if result_data:
+        save_simulation_result(
+            sim_id=result_data["simulation_id"],
+            agent_a=result_data["agent_a"],
+            agent_b=result_data["agent_b"],
+            status=result_data["status"],
+            turns=result_data["turns"],
+            final_price=result_data.get("final_price")
+        )
+    
+    update_job_status(job_id, status, error=error, sim_id=sim_id)
+    return {"status": "success"}
 
 app.mount("/play", StaticFiles(directory="frontend", html=True), name="frontend")

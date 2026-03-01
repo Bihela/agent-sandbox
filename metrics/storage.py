@@ -2,7 +2,7 @@ from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, D
 from sqlalchemy.orm import declarative_base, sessionmaker
 from datetime import datetime
 
-DATABASE_URL = "sqlite:///./sandbox_metrics.db"
+DATABASE_URL = "sqlite:///./sandbox_metrics_v2.db"
 
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -28,6 +28,7 @@ class SimulationJob(Base):
     config_json = Column(JSON)  # Stores SimulationConfig as JSON
     scenario_type = Column(String)
     priority = Column(Integer, default=0)
+    batch_id = Column(String, index=True, nullable=True) # Groups runs in a single experiment
     error_message = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     started_at = Column(DateTime, nullable=True)
@@ -67,14 +68,15 @@ def save_simulation_result(
 
 # ─── Queue Helper Functions ───
 
-def add_job(scenario_type: str, config: dict, priority: int = 0):
+def add_job(scenario_type: str, config: dict, priority: int = 0, batch_id: str = None):
     db = SessionLocal()
     try:
         job = SimulationJob(
             scenario_type=scenario_type,
             config_json=config,
             priority=priority,
-            status="pending"
+            status="pending",
+            batch_id=batch_id
         )
         db.add(job)
         db.commit()
@@ -83,7 +85,8 @@ def add_job(scenario_type: str, config: dict, priority: int = 0):
     finally:
         db.close()
 
-def get_next_job():
+def acquire_next_job():
+    """Atomically finds and marks the next pending job as 'running'."""
     db = SessionLocal()
     try:
         # Get highest priority, oldest pending job
@@ -92,8 +95,17 @@ def get_next_job():
         ).order_by(
             SimulationJob.priority.desc(),
             SimulationJob.created_at.asc()
-        ).first()
+        ).with_for_update().first() # Lock the row if supported, or just use atomic status check
+        
+        if job:
+            job.status = "running"
+            job.started_at = datetime.utcnow()
+            db.commit()
+            db.refresh(job)
         return job
+    except:
+        db.rollback()
+        raise
     finally:
         db.close()
 

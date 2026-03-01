@@ -35,6 +35,7 @@ The Agent Sandbox is a multi-agent system backend built using FastAPI.
   - `GET /simulation/{id}`: Retrieves the full history and details of a specific simulation run.
   - `POST /scenario/create`: API for dynamically generating and persisting custom negotiation scenarios.
   - `GET /scenario/list`: Retrieves all available core and user-defined custom scenarios.
+  - `GET /batch/{batch_id}/progress`: Returns real-time completion status, statistics, and ETA for a specific simulation batch.
 - **Replay System**: Built-in tracking inside `world/world_manager.py` that records the precise agent actions, capturing the actor, turn number, and raw action state in a linear `steps` array, which is then exposed in the API outputs.
 - **Browser UI**: A responsive, vanilla HTML/JS/CSS frontend located in `frontend/index.html`. It is statically mounted and served via FastAPI at the `/play` endpoint. Features include:
   - **Global Command Header**: Centralized navigation for Ecoystem Discovery, Performance Arena, and Intelligence Hub.
@@ -52,7 +53,7 @@ The Agent Sandbox is a multi-agent system backend built using FastAPI.
   - `BaseProvider`: Defines a standard chat interface and model discovery.
   - `ProviderFactory`: Manages lazy-loading of providers, ensuring the system remains stable even if cloud SDKs (OpenAI, Gemini) are missing.
   - **Supported Backends**: Ollama (local), OpenAI, Google Gemini, and Groq (high-speed).
-- **Simulation Config System**: `configs/simulation_config.py` provides a Pydantic-based configuration model (`SimulationConfig`) with per-agent `AgentConfig` for strategy (`aggressive/cooperative/analytical/adaptive`), risk level (`low/medium/high`), LLM temperature (0-2), negotiation style (`formal/casual/competitive/collaborative`), and model selection (prefixed with provider, e.g., `openai:gpt-4o`). Config values are injected into LLM prompts as behavioral modifiers and included as a snapshot in simulation output. Frontend exposes collapsible Advanced Config controls.
+- **Simulation Config System**: `configs/simulation_config.py` provides a Pydantic-based configuration model (`SimulationConfig`) with per-agent `AgentConfig` for strategy (`aggressive/cooperative/analytical/adaptive`), risk level (`low/medium/high`), LLM temperature (0-2), negotiation style (`formal/casual/competitive/collaborative`), seed (for reproducibility), and model selection (prefixed with provider, e.g., `openai:gpt-4o`). Config values are injected into LLM prompts as behavioral modifiers and included as a snapshot in simulation output. Frontend exposes collapsible Advanced Config controls.
 - **OpenTelemetry Logging System**: `telemetry_module/telemetry.py` provides research-grade structured telemetry using OpenTelemetry SDK. Tracks decision latency (per-agent, avg, P95, max), token usage, model errors/fallbacks, and negotiation complexity scores. `TelemetryCollector` aggregates per-simulation and global metrics. Exposed via `/telemetry` API endpoint and rendered in the frontend's Telemetry panel with latency bar visualizations.
 - **Agent Strategy System**: Pluggable strategy modules in `agents/strategies/` with `BaseStrategy` abstract class, three implementations (aggressive 5% concession, balanced 10%, conservative 20%), and a registry with aliases. Strategies provide both LLM system prompts and programmatic fallback logic, replacing the previous hardcoded fallback. Enables strategy experiments from the UI.
 - **Dataset Export System**: `metrics/dataset_exporter.py` flattens simulation replays into tabular rows (one per decision step) with 20 columns spanning simulation metadata, config, failure analysis, telemetry, and per-step actions. Exposed via `GET /dataset/export?format=json|csv`. Frontend sidebar has JSON/CSV download buttons. Turns the sandbox into a negotiation dataset generator.
@@ -63,9 +64,10 @@ The Agent Sandbox is a multi-agent system backend built using FastAPI.
   - **Intelligence Hub View**: A dedicated, full-screen dashboard in the UI for visualizing global strategy effectiveness, model benchmarks, and detailed ranking metrics.
 - **Red Team Adversarial Engine**: A specialized `RedTeamAgent` that acts as a "Man-in-the-Middle" during simulations. It disrupts negotiations by injecting wrong numbers, fake constraints, or protocol violations based on a configurable attack probability. This allows stress-testing of the `FailureDetector` and observation of how strategies handle deception.
 - **Experiment Research Engine**: A high-level orchestrator (`ExperimentRunner`) that performs complex parameter sweeps (Grid Search) across multiple variables (temperature, strategies, models). Results are aggregated into structured JSON datasets for scientific analysis of model convergence and behavior.
-- **Simulation Scheduler**: A persistent queue system in `simulation_queue/` that enables long-running background experiments. 
+- **Simulation Scheduler**: A persistent, thread-safe queue system in `simulation_queue/` that enables long-running background experiments and cloud acceleration.
   - `SimulationJob`: Database model for tracking job state (pending, running, completed, failed).
-  - `SimulationWorker`: Background thread that processes jobs from the queue sequentially.
+  - `SimulationWorker`: Multi-threaded background process that acquires jobs atomically to prevent duplication.
+  - **Remote Worker API**: New endpoints (`/queue/acquire`, `/queue/submit`) in `backend/main.py` allowing cloud instances (Google Colab) to act as horizontally scaled workers.
   - Endpoints: `POST /simulation/schedule`, `GET /queue/status`, `GET /queue/recent`.
 - **Performance Arena**: A competitive benchmarking mode with a "Versus" clashing layout.
   - **Model vs Model**: Supports independent foundation model selection for both Buyer and Seller, enabling direct cross-model and cross-provider benchmarking.

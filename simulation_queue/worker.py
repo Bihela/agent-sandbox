@@ -2,7 +2,7 @@ import time
 import threading
 import logging
 import traceback
-from simulation_queue.queue_manager import get_next_job, update_job_status
+from metrics.storage import acquire_next_job, update_job_status
 from world.world_manager import WorldManager
 from scenarios.price_negotiation import PriceNegotiationScenario
 from scenarios.multi_vendor_negotiation import MultiVendorNegotiationScenario
@@ -26,13 +26,12 @@ class SimulationWorker(threading.Thread):
         logger.info("Simulation worker started.")
         while self.running:
             try:
-                job = get_next_job()
+                job = acquire_next_job()
                 if not job:
                     time.sleep(5)  # Idle wait
                     continue
 
                 logger.info(f"Processing job {job.id}...")
-                update_job_status(job.id, "running")
 
                 try:
                     # 1. Reconstruct Scenario and Config
@@ -83,18 +82,19 @@ class SimulationWorker(threading.Thread):
             "negotiation_style": d.get("negotiation_style", "formal"),
             "model_name": d.get("model_name", "mistral"),
             "temperature": d.get("temperature", 0.7),
+            "seed": d.get("seed"),
         }
 
-        if "buyer_config" in d and d["buyer_config"]:
+        if d.get("buyer_config"):
             kwargs["buyer_config"] = AgentConfig(**d["buyer_config"])
         
-        if "seller_config" in d and d["seller_config"]:
+        if d.get("seller_config"):
             kwargs["seller_config"] = AgentConfig(**d["seller_config"])
 
-        if "agents_configs" in d and d["agents_configs"]:
+        if d.get("agents_configs"):
             kwargs["agents_configs"] = [AgentConfig(**a) for a in d["agents_configs"]]
 
-        if "red_team_config" in d and d["red_team_config"]:
+        if d.get("red_team_config"):
             # Handle attack_types list if present
             red_data = d["red_team_config"]
             kwargs["red_team_config"] = RedTeamConfig(**red_data)

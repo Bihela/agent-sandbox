@@ -75,6 +75,7 @@ class WorldManager:
                     model=agent_cfg.model_name or config.model_name
                 )
                 agent._sim_id = sim_id
+                agent._seed = config.seed # Propagate seed
                 agents.append(agent)
         else:
             # Legacy 1v1 fallback
@@ -102,6 +103,8 @@ class WorldManager:
             )
             agent_a._sim_id = sim_id
             agent_b._sim_id = sim_id
+            agent_a._seed = config.seed
+            agent_b._seed = config.seed
             agents = [agent_a, agent_b]
 
         mediator = Mediator(max_turns=scenario.max_turns, num_participants=len(agents))
@@ -136,8 +139,12 @@ class WorldManager:
         
         # Determine final price from last step if agreement
         final_price = None
-        if result_details["status"] == "agreement" and len(mediator.history) > 0:
-             final_price = mediator.history[-1].price
+        if result_details["status"] == "agreement":
+            final_price = result_details.get("final_price") or (mediator.history[-1].price if mediator.history else None)
+            
+            # If still null (common in acceptance messages), look at the turn before or global state
+            if final_price is None and len(mediator.history) > 1:
+                final_price = mediator.history[-2].price
              
         # Save to DB (Legacy DB schema only supports 2 agents, we use first 2 or summary)
         agent_names = [a.name for a in agents]

@@ -83,6 +83,7 @@ class SimulationConfig(BaseModel):
     # ─── LLM Settings ───
     model_name: str = Field(default="mistral", description="Ollama model name")
     temperature: float = Field(default=0.7, ge=0.0, le=2.0, description="Global LLM temperature (overridden by per-agent)")
+    seed: Optional[int] = Field(default=None, description="Optional seed for reproducible generation")
 
     def get_strategy_prompt(self, strategy: StrategyType) -> str:
         """Returns a prompt modifier based on strategy type."""

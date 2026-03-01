@@ -1,4 +1,5 @@
 import time
+import json
 from agents.base_agent import Agent
 from agents.strategies import get_strategy
 from telemetry_module.telemetry import tracer, collector
@@ -90,11 +91,13 @@ Respond in EXACT JSON format with no markdown wrappers or other text:
                 response_data = self.provider.chat(
                     model=self.model,
                     messages=self.history,
-                    temperature=self.temperature
+                    temperature=self.temperature,
+                    seed=getattr(self, "_seed", None)
                 )
 
                 generated_text = response_data.get("content", "")
                 tokens_used = response_data.get("tokens_used", 0)
+                reasoning_length = len(generated_text) # Depth metric
 
                 # --- Robust JSON Parsing ---
                 # 1. Strip markdown code blocks
@@ -150,17 +153,29 @@ Respond in EXACT JSON format with no markdown wrappers or other text:
 
                 span.set_attribute("agent.action", result.get("type", "unknown"))
                 span.set_attribute("llm.tokens", tokens_used)
+                span.set_attribute("agent.reasoning_length", reasoning_length)
 
                 latency_ms = (time.perf_counter() - start_time) * 1000
                 if self._sim_id:
                     collector.record_decision(
                         self._sim_id, self.name, latency_ms,
-                        tokens=tokens_used, model=self.model
+                        tokens=tokens_used, model=self.model,
+                        reasoning_length=reasoning_length
                     )
 
                 return result
 
             except Exception as e:
+                import os
+                import traceback
+                os.makedirs("tmp", exist_ok=True)
+                with open("tmp/llm_errors.log", "a") as f:
+                    f.write(f"--- Error at {time.strftime('%Y-%m-%d %H:%M:%S')} ---\n")
+                    f.write(f"Agent: {self.name}, Model: {self.model}\n")
+                    f.write(f"Exception: {str(e)}\n")
+                    f.write(traceback.format_exc())
+                    f.write("-" * 40 + "\n")
+
                 span.set_attribute("agent.error", str(e))
                 span.set_attribute("agent.fallback", True)
 

@@ -1,5 +1,5 @@
 import json
-from metrics.storage import add_job, get_next_job, update_job_status, SessionLocal, SimulationJob
+from metrics.storage import add_job, update_job_status, SessionLocal, SimulationJob
 
 class QueueManager:
     """Manages the simulation queue and job submission."""
@@ -7,11 +7,13 @@ class QueueManager:
     @staticmethod
     def schedule_simulations(scenario_type: str, config: dict, count: int = 1, priority: int = 0):
         """Enqueues N simulations with the same config."""
+        import uuid
+        batch_id = str(uuid.uuid4())
         jobs = []
         for _ in range(count):
-            job = add_job(scenario_type, config, priority)
+            job = add_job(scenario_type, config, priority, batch_id=batch_id)
             jobs.append(job)
-        return jobs
+        return {"batch_id": batch_id, "job_count": len(jobs)}
 
     @staticmethod
     def get_queue_stats():

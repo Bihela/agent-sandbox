@@ -35,10 +35,13 @@ To add a new provider (e.g., Anthropic):
    ```python
    from agents.providers.base_provider import BaseProvider
    
-   class AnthropicProvider(BaseProvider):
-       def chat(self, model, messages, temperature):
-           # Implement your API call here
-           return {"content": "...", "tokens_used": 0}
+- **Anthropic (New Example)**:
+```python
+class AnthropicProvider(BaseProvider):
+    def chat(self, model, messages, temperature, seed=None):
+        # Implement your API call here, passing seed for reproducibility if supported
+        return {"content": "...", "tokens_used": 0}
+```
            
        def get_available_models(self):
            return ["claude-3-opus", "claude-3-sonnet"]

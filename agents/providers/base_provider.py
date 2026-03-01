@@ -5,7 +5,7 @@ class BaseProvider(ABC):
     """Abstract base class for LLM providers."""
     
     @abstractmethod
-    def chat(self, model: str, messages: List[Dict[str, str]], temperature: float = 0.7) -> Dict[str, Any]:
+    def chat(self, model: str, messages: List[Dict[str, str]], temperature: float = 0.7, seed: int = None) -> Dict[str, Any]:
         """
         Send a chat request to the provider.
         Returns a dict with:

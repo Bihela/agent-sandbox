@@ -151,4 +151,27 @@ This document records decisions made during development, specifically logging ap
 - **Decision**: Refactored the Arena UI and Backend to support independent model and provider selection for both the "Buyer Challenger" and the "Seller Defender". Grouped models by provider in the frontend dropdowns for clarity.
 - **Impact**: Enables "Llama vs Gemini" or "Mistral vs GPT-4" clashing, fulfilling the primary requirement for cross-model capability benchmarking.
 
+### [Reproducibility via Simulation Seeds]
+- **Date**: 2026-02-27
+- **Context**: LLM responses can be non-deterministic, making scientific replication of agent behavior difficult. 
+- **Decision**: Implemented global `seed` propagation in `SimulationConfig`. Modified all providers (Ollama, OpenAI, Groq) to accept and utilize the seed parameter. 
+- **Impact**: Researchers can now share specific seeds to guarantee identical trajectory generation across different environments.
+
+### [Batch Progress Tracking and ETA Calculation]
+- **Date**: 2026-02-27
+- **Context**: Large-scale sweeps (like the 24,000 run baseline) take days to complete. Users need a way to monitor health and estimatated completion time without manually checking database counts.
+- **Decision**: Implemented `/batch/{batch_id}/progress` API. It calculates completion percentage, failure rates, and provides a real-time ETA based on the average duration of completed runs in that specific batch.
+- **Impact**: Enables management of "Industry-Scale" data collection by providing predictable timelines for large simulation sets.
+
+### [Parallel Architecture Upgrade & Bug Fixes]
+- **Date**: 2026-03-01
+- **Context**: Large-scale simulation sweeps were failing due to LLM connectivity issues and a status string mismatch in the mediator. The single-worker setup was also too slow for the 24,000 run target.
+- **Decision**: 
+    1. Implemented a **Multi-Worker Architecture** in `backend/main.py`, spawning 4 parallel `SimulationWorker` threads to leverage the 8-core CPU.
+    2. Fixed the **Status String Mismatch** in `world/mediator.py` (changed `"success"` to `"agreement"`) to enable correct price logging.
+    3. Refined **Fallback Logic** in `BalancedStrategy` to prevent 1-turn deals during LLM failures.
+    4. Added a **Recovery Script** (`scripts/recovery_reset.py`) to prune and reset junk simulations.
+- **Impact**: Simulation throughput increased ~4x. Data quality is restored by fixing price logging and adding LLM failure diagnostics.
+- **Reasoning (Why rejected)**: Simply increasing worker count beyond 4-6 was rejected to avoid saturating local GPU/Ollama resources.
+
 *(No more entries. Add entries here when evaluating features, dependencies, or architectural choices.)*

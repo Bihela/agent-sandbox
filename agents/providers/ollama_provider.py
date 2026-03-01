@@ -8,14 +8,18 @@ class OllamaProvider(BaseProvider):
     Requires the 'ollama' Python library and a running Ollama daemon.
     """
     
-    def chat(self, model: str, messages: List[Dict[str, str]], temperature: float = 0.7) -> Dict[str, Any]:
+    def chat(self, model: str, messages: List[Dict[str, str]], temperature: float = 0.7, seed: int = None) -> Dict[str, Any]:
         """
         Executes a chat completion request via local Ollama.
         """
+        options = {"temperature": temperature}
+        if seed is not None:
+            options["seed"] = seed
+
         response = ollama.chat(
             model=model,
             messages=messages,
-            options={"temperature": temperature}
+            options=options
         )
         
         content = response.get("message", {}).get("content", "")
