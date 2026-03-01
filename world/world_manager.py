@@ -160,6 +160,8 @@ class WorldManager:
         # ─── 4. Save replay data ───
         output = {
             "simulation_id": sim_id,
+            "agent_a": agent_names[0] if len(agent_names) > 0 else "Unknown",
+            "agent_b": agent_names[1] if len(agent_names) > 1 else "None",
             "status": result_details["status"],
             "turns": result_details["turns"],
             "final_price": final_price,

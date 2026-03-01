@@ -75,8 +75,8 @@ def run_worker():
                 "sim_id": result["simulation_id"],
                 "result_data": {
                     "simulation_id": result["simulation_id"],
-                    "agent_a": result["agent_a"]["name"],
-                    "agent_b": result["agent_b"]["name"],
+                    "agent_a": result["agent_a"], 
+                    "agent_b": result["agent_b"],
                     "status": "agreement" if result["final_price"] else "failure",
                     "turns": result["turns"],
                     "final_price": result["final_price"]

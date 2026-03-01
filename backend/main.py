@@ -44,7 +44,7 @@ workers: List[SimulationWorker] = []
 def startup_event():
     """Initializes background workers and logging on application startup."""
     global workers
-    num_workers = min(os.cpu_count() or 1, 4) # Target 4 workers for parallel speed
+    num_workers = 1 # Reducing local workers to 1 to save CPU; remote workers will do the heavy lifting.
     for i in range(num_workers):
         w = SimulationWorker(world_manager)
         w.name = f"SimulationWorker-{i+1}"
