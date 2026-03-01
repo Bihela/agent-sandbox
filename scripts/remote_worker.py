@@ -7,21 +7,28 @@ import sys
 # This worker will connect to the local backend, acquire a job, run it locally on the remote machine, 
 # and submit results back.
 
+# --- PATH FIX FOR COLAB/REMOTE ---
+# We need to make sure we can find the project modules (world, agents, etc.)
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(current_dir) # Parent of scripts/
+if project_root not in sys.path:
+    sys.path.append(project_root)
+# ---------------------------------
+
 BACKEND_URL = "http://YOUR_LOCAL_IP:8000" # User will need to replace this
 
 def run_worker():
     print(f"Remote Worker started. Connecting to {BACKEND_URL}")
     
-    # We need the same logic as SimulationWorker but across HTTP
     # To keep it simple, we'll try to import the local project if available, 
     # but for a Colab notebook, we might need a standalone runner.
     
-    # FOR NOW: I will provide a version that assumes the repo is cloned in Colab.
     try:
         from world.world_manager import WorldManager
         from simulation_queue.worker import SimulationWorker
-    except ImportError:
-        print("Error: Project directory not found in path. Make sure you are in the project root.")
+    except ImportError as e:
+        print(f"Error: Project modules not found. sys.path is: {sys.path}")
+        print(f"Exception: {e}")
         return
 
     world_manager = WorldManager()

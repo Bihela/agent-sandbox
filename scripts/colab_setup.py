@@ -3,9 +3,24 @@
 
 import os
 
-# 1. Clone the repository
+# 1. Clean Slate & Clone
+!rm -rf agent-sandbox
 !git clone https://github.com/Bihela/agent-sandbox.git
 %cd agent-sandbox
+
+# If your repo has a nested structure, this finds the REAL root
+import os, sys
+def find_and_go_to_root():
+    for root, dirs, files in os.walk("."):
+        if "world" in dirs and "agents" in dirs:
+            root_path = os.path.abspath(root)
+            os.chdir(root_path)
+            return root_path
+    return os.getcwd()
+
+PROJECT_ROOT = find_and_go_to_root()
+sys.path.append(PROJECT_ROOT)
+print(f"Working in: {PROJECT_ROOT}")
 
 # 2. Install Ollama and models on Colab GPU
 !curl -fsSL https://ollama.com/install.sh | sh
@@ -27,5 +42,5 @@ time.sleep(10) # Wait for server to start
 BACKEND_URL = "INSERT_YOUR_TUNNEL_URL_HERE"
 
 # 6. Run the worker
-# This will now use the LOCAL Ollama running on Colab's GPU
-!python scripts/remote_worker.py {BACKEND_URL}
+# We set PYTHONPATH to the project root so it can find 'world', 'agents', etc.
+!export PYTHONPATH={PROJECT_ROOT} && python scripts/remote_worker.py {BACKEND_URL}

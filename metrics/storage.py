@@ -1,6 +1,10 @@
 from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, DateTime, Text, JSON
 from sqlalchemy.orm import declarative_base, sessionmaker
 from datetime import datetime
+import threading
+
+# Global lock for atomic job acquisition in SQLite
+job_lock = threading.Lock()
 
 DATABASE_URL = "sqlite:///./sandbox_metrics_v2.db"
 
@@ -87,27 +91,28 @@ def add_job(scenario_type: str, config: dict, priority: int = 0, batch_id: str =
 
 def acquire_next_job():
     """Atomically finds and marks the next pending job as 'running'."""
-    db = SessionLocal()
-    try:
-        # Get highest priority, oldest pending job
-        job = db.query(SimulationJob).filter(
-            SimulationJob.status == "pending"
-        ).order_by(
-            SimulationJob.priority.desc(),
-            SimulationJob.created_at.asc()
-        ).with_for_update().first() # Lock the row if supported, or just use atomic status check
-        
-        if job:
-            job.status = "running"
-            job.started_at = datetime.utcnow()
-            db.commit()
-            db.refresh(job)
-        return job
-    except:
-        db.rollback()
-        raise
-    finally:
-        db.close()
+    with job_lock:
+        db = SessionLocal()
+        try:
+            # Get highest priority, oldest pending job
+            job = db.query(SimulationJob).filter(
+                SimulationJob.status == "pending"
+            ).order_by(
+                SimulationJob.priority.desc(),
+                SimulationJob.created_at.asc()
+            ).first()
+            
+            if job:
+                job.status = "running"
+                job.started_at = datetime.utcnow()
+                db.commit()
+                db.refresh(job)
+            return job
+        except:
+            db.rollback()
+            raise
+        finally:
+            db.close()
 
 def update_job_status(job_id: int, status: str, error: str = None, sim_id: str = None):
     db = SessionLocal()
