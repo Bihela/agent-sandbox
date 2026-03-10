@@ -20,7 +20,6 @@ graph TD
     A[Frontend: Play UI] -->|REST API| B[FastAPI Backend]
     B --> C[World Manager]
     C --> D[Mediator Engine]
-    D --> E[Agents]
     
     subgraph Agents
         E1[Rule-based Agents]
@@ -28,7 +27,9 @@ graph TD
         E3[Red Team Adversaries]
     end
     
-    E2 --> F[Provider Layer]
+    D --> E1
+    D --> E2
+    D --> E3
     
     subgraph Providers
         F1[Ollama]
@@ -36,6 +37,11 @@ graph TD
         F3[Gemini]
         F4[Groq]
     end
+    
+    E2 --> F1
+    E2 --> F2
+    E2 --> F3
+    E2 --> F4
     
     C --> G[Metrics & Dataset Export]
     C --> H[Tournament Engine]
