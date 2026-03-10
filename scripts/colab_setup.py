@@ -26,7 +26,8 @@ print(f"Working in: {PROJECT_ROOT}")
 !curl -fsSL https://ollama.com/install.sh | sh
 import subprocess
 import time
-# Start Ollama server in background
+# Start Ollama server in background with parallel request support
+os.environ["OLLAMA_NUM_PARALLEL"] = "10"
 process = subprocess.Popen(["ollama", "serve"])
 time.sleep(10) # Wait for server to start
 
@@ -46,8 +47,8 @@ BACKEND_URL = "INSERT_YOUR_TUNNEL_URL_HERE"
 import os
 os.environ["PYTHONPATH"] = PROJECT_ROOT
 
-# Launching 3 workers in the background to maximize GPU usage
-for i in range(3):
+# Launching 10 workers in the background to maximize GPU usage
+for i in range(10):
     subprocess.Popen(["python", "scripts/remote_worker.py", BACKEND_URL])
     print(f"🚀 Worker {i+1} started.")
 

@@ -23,6 +23,10 @@ from simulation_queue.queue_manager import QueueManager
 from simulation_queue.worker import SimulationWorker
 import logging
 import threading
+import asyncio
+import datetime
+from sqlalchemy import and_
+from metrics.storage import SessionLocal, SimulationJob
 import json
 import os
 from dotenv import load_dotenv
@@ -40,8 +44,38 @@ experiment_runner = ExperimentRunner(world_manager)
 # Global list of workers
 workers: List[SimulationWorker] = []
 
+async def stale_job_reaper():
+    """Background task that resets jobs stuck in 'running' for too long."""
+    
+    while True:
+        try:
+            # Wait 5 minutes between checks
+            await asyncio.sleep(300)
+            
+            db = SessionLocal()
+            try:
+                # Find jobs running for more than 20 minutes
+                stale_threshold = datetime.datetime.utcnow() - datetime.timedelta(minutes=20)
+                stale_jobs = db.query(SimulationJob).filter(
+                    and_(
+                        SimulationJob.status == "running",
+                        SimulationJob.started_at < stale_threshold
+                    )
+                ).all()
+                
+                if stale_jobs:
+                    logging.info(f"Reaper: Resetting {len(stale_jobs)} stale jobs back to pending.")
+                    for job in stale_jobs:
+                        job.status = "pending"
+                        job.started_at = None
+                    db.commit()
+            finally:
+                db.close()
+        except Exception as e:
+            logging.error(f"Reaper error: {e}")
+
 @app.on_event("startup")
-def startup_event():
+async def startup_event():
     """Initializes background workers and logging on application startup."""
     global workers
     num_workers = 4 # Reverted to 4 as requested. The PC will help the Colabs.
@@ -51,7 +85,9 @@ def startup_event():
         w.start()
         workers.append(w)
     
-    logging.info(f"Initialized {len(workers)} background simulation workers.")
+    # Start the automated reaper
+    asyncio.create_task(stale_job_reaper())
+    logging.info(f"Initialized {len(workers)} background simulation workers and automated job reaper.")
 
 @app.on_event("shutdown")
 def shutdown_event():

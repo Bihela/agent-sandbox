@@ -39,8 +39,8 @@ def run_worker():
             print("Requesting job...")
             response = requests.post(f"{BACKEND_URL}/queue/acquire")
             if response.status_code == 404:
-                print("No jobs available. Waiting 10s...")
-                time.sleep(10)
+                print("No jobs available. Waiting 3s...")
+                time.sleep(3)
                 continue
             
             if response.status_code != 200:

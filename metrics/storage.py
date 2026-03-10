@@ -8,7 +8,20 @@ job_lock = threading.Lock()
 
 DATABASE_URL = "sqlite:///./sandbox_metrics_v2.db"
 
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+engine = create_engine(
+    DATABASE_URL, 
+    connect_args={"check_same_thread": False, "timeout": 30}
+)
+
+# Enable WAL mode for high concurrency
+from sqlalchemy import event
+@event.listens_for(engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA journal_mode=WAL")
+    cursor.execute("PRAGMA synchronous=NORMAL")
+    cursor.close()
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
@@ -107,6 +120,7 @@ def acquire_next_job():
                 job.started_at = datetime.utcnow()
                 db.commit()
                 db.refresh(job)
+                print(f"📦 [Queue] Job {job.id} acquired by worker.")
             return job
         except:
             db.rollback()

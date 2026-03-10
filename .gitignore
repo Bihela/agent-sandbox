@@ -1,23 +1,20 @@
 # --- Local Data & Databases ---
-sandbox_metrics.db
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.csv
+datasets/
 data/leaderboard.json
 data/scenarios.json
 data/experiments/
 
 # --- Personal & Environment ---
-Wanasekara/
+.personal/
 .env
 venv/
 .venv/
 env/
-
-# --- Documentation ---
-# Ignore everything in docs/ by default for personal vibecoding
-docs/*
-# But allow the public research documentation
-!docs/architecture.md
-!docs/memory_bank.md
-!docs/providers.md
 
 # --- Temporary & Build Artifacts ---
 tmp/
